@@ -1917,7 +1917,7 @@ export class PreGameScene extends Phaser.Scene {
         }
     }
 
-    copySessionKey() {
+    copySessionKey(event) {
         const key = document.getElementById('pvp-session-key').textContent;
         navigator.clipboard.writeText(key).then(() => {
             const btn = event.target;
