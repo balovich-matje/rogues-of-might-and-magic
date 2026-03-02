@@ -1648,9 +1648,22 @@ export class PreGameScene extends Phaser.Scene {
 
     drawGrid() {
         this.gridGraphics.clear();
+        
+        // Determine placement zone based on PVP side
+        let placementStartX = 0;
+        let placementEndX = 2;
+        
+        if (this.isPVPMode && this.pvpManager) {
+            const mySide = this.pvpManager.getMySide() || 'left';
+            if (mySide === 'right') {
+                placementStartX = CONFIG.GRID_WIDTH - 2;
+                placementEndX = CONFIG.GRID_WIDTH;
+            }
+        }
+        
         for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
             for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
-                const isPlacementZone = x < 2;
+                const isPlacementZone = x >= placementStartX && x < placementEndX;
                 const baseColor = (x + y) % 2 === 0 ? CONFIG.COLORS.GRASS : CONFIG.COLORS.GRASS_DARK;
                 // Make placement zone brighter
                 const alpha = isPlacementZone ? 0.6 : 0.2;
@@ -1716,8 +1729,28 @@ export class PreGameScene extends Phaser.Scene {
         this.placementMode = true;
         this.placedUnits = [];
         
+        // Determine placement columns based on PVP side
+        let placementStartX = 0;
+        let placementEndX = 2;
+        let mySide = 'left';
+        
+        if (this.isPVPMode && this.pvpManager) {
+            mySide = this.pvpManager.getMySide() || 'left';
+            if (mySide === 'right') {
+                placementStartX = CONFIG.GRID_WIDTH - 2;
+                placementEndX = CONFIG.GRID_WIDTH;
+            }
+            console.log(`[PVP] Placement: Player on ${mySide.toUpperCase()} side, columns ${placementStartX}-${placementEndX-1}`);
+        }
+        
         const placementBar = document.getElementById('placement-bar');
         placementBar.classList.remove('hidden');
+        
+        // Update placement hint
+        const hintText = placementBar.querySelector('.placement-hint');
+        if (hintText && this.isPVPMode) {
+            hintText.textContent = `Click on the ${mySide.toUpperCase()} 2 columns to place units`;
+        }
         
         this.updatePlacementDisplay();
         
@@ -1732,7 +1765,9 @@ export class PreGameScene extends Phaser.Scene {
             const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
             const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
             
-            if (gridX >= 0 && gridX < 2 && gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
+            // Use dynamic placement range based on side
+            if (gridX >= placementStartX && gridX < placementEndX && 
+                gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
                 const isOccupied = this.placedUnits.some(u => u.x === gridX && u.y === gridY);
                 
                 if (!isOccupied) {
@@ -1758,7 +1793,9 @@ export class PreGameScene extends Phaser.Scene {
             const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
             const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
             
-            if (gridX >= 0 && gridX < 2 && gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
+            // Use dynamic placement range based on side
+            if (gridX >= placementStartX && gridX < placementEndX && 
+                gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
                 const isOccupied = this.placedUnits.some(u => u.x === gridX && u.y === gridY);
                 
                 this.gridGraphics.fillStyle(isOccupied ? 0x9E4A4A : 0x6B8B5B, 0.5);
