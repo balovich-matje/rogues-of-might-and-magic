@@ -153,12 +153,25 @@ export class PVPManager {
     getMySide() {
         if (!this.sessionState?.pvpRound) return null;
         
-        if (this.playerNumber === 1) {
-            return this.sessionState.pvpRound.player1Side;
-        } else {
-            // Player 2 gets opposite side
-            return this.sessionState.pvpRound.player1Side === 'left' ? 'right' : 'left';
+        // First check if sides are assigned in pvpRound
+        if (this.sessionState.pvpRound.sidesAssigned) {
+            if (this.playerNumber === 1) {
+                return this.sessionState.pvpRound.player1Side;
+            } else {
+                return this.sessionState.pvpRound.player2Side;
+            }
         }
+        
+        // Fallback: check player data directly
+        const playerKey = this.playerNumber === 1 ? 'player1' : 'player2';
+        return this.sessionState[playerKey]?.side || null;
+    }
+    
+    /**
+     * Check if sides have been assigned
+     */
+    areSidesAssigned() {
+        return this.sessionState?.pvpRound?.sidesAssigned || false;
     }
 
     /**

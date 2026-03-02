@@ -1871,7 +1871,7 @@ export class PreGameScene extends Phaser.Scene {
             document.getElementById('pvp-waiting').style.display = 'block';
             document.getElementById('pvp-session-key').textContent = sessionKey;
             
-            // Listen for opponent
+            // Listen for opponent and side assignment
             this.pvpManager.onOpponentConnected = (opponent) => {
                 document.getElementById('pvp-player-status').textContent = `${opponent.name} connected! Starting...`;
                 document.getElementById('pvp-player-status').style.color = '#4CAF50';
@@ -1882,9 +1882,31 @@ export class PreGameScene extends Phaser.Scene {
                 }, 1500);
             };
             
+            // Listen for side assignment
+            this.pvpManager.onPVPStateChange = (state, fullState) => {
+                if (state === 'playing' && fullState?.pvpRound?.sidesAssigned) {
+                    const mySide = this.pvpManager.getMySide();
+                    if (mySide) {
+                        this._showAssignedSide(mySide);
+                    }
+                }
+            };
+            
         } catch (error) {
             console.error('Failed to create PVP session:', error);
             alert('Failed to create session. Please try again.');
+        }
+    }
+    
+    _showAssignedSide(side) {
+        console.log(`[PVP] Assigned side: ${side.toUpperCase()}`);
+        const sideInfo = document.getElementById('pvp-side-info');
+        const sideText = document.getElementById('pvp-assigned-side');
+        
+        if (sideInfo && sideText) {
+            sideInfo.style.display = 'block';
+            sideText.textContent = side.toUpperCase();
+            sideText.style.color = side === 'left' ? '#4a7cd9' : '#d94a4a';
         }
     }
     
@@ -1924,6 +1946,24 @@ export class PreGameScene extends Phaser.Scene {
             
             // Update UI to show session info
             this._showSessionInfo(sessionKey);
+            
+            // Check if sides are already assigned and show them
+            if (this.pvpManager.areSidesAssigned()) {
+                const mySide = this.pvpManager.getMySide();
+                if (mySide) {
+                    this._showAssignedSide(mySide);
+                }
+            }
+            
+            // Listen for side assignment (if not already assigned)
+            this.pvpManager.onPVPStateChange = (state, fullState) => {
+                if (state === 'playing' && fullState?.pvpRound?.sidesAssigned) {
+                    const mySide = this.pvpManager.getMySide();
+                    if (mySide) {
+                        this._showAssignedSide(mySide);
+                    }
+                }
+            };
             
         } catch (error) {
             console.error('Failed to join session:', error);

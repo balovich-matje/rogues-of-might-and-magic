@@ -47,6 +47,8 @@ export class FirebaseAdapter extends NetworkAdapter {
             expiresAt: Date.now() + (5 * 60 * 1000), // 5 minutes from now
             pvpRound: {
                 player1Side: null,
+                player2Side: null,
+                sidesAssigned: false,
                 player1Ready: false,
                 player2Ready: false,
                 battleStarted: false,
@@ -91,6 +93,12 @@ export class FirebaseAdapter extends NetworkAdapter {
             throw new Error('Session is full');
         }
         
+        // Assign sides randomly when player 2 joins
+        const player1Side = Math.random() < 0.5 ? 'left' : 'right';
+        const player2Side = player1Side === 'left' ? 'right' : 'left';
+        
+        console.log(`[PVP] Sides assigned: Player 1 = ${player1Side.toUpperCase()}, Player 2 = ${player2Side.toUpperCase()}`);
+        
         // Join as player 2
         const player2Data = {
             id: this.playerId,
@@ -99,13 +107,17 @@ export class FirebaseAdapter extends NetworkAdapter {
             currentBattle: 1,
             army: [],
             ready: false,
-            side: null,
+            side: player2Side,
             lastSeen: firebase.database.ServerValue.TIMESTAMP
         };
 
         await sessionRef.update({
             player2: player2Data,
+            'player1/side': player1Side,
             state: 'playing',
+            'pvpRound/player1Side': player1Side,
+            'pvpRound/player2Side': player2Side,
+            'pvpRound/sidesAssigned': true,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
         });
 
