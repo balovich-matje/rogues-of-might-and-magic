@@ -152,8 +152,8 @@ export class PVPMatchScene extends Phaser.Scene {
         this._hideWaitingUI();
         
         // Initialize PVP round with random sides
-        if (this.playerNumber === 1) {
-            await this.pvpManager.initPVPRound();
+        if (this.playerNumber === 1 && this.pvpManager.network) {
+            await this.pvpManager.network.initPVPRound();
         }
         
         // Wait for side assignment
