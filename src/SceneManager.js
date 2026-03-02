@@ -32,6 +32,10 @@ export class BattleScene extends Phaser.Scene {
         this.selectedRewards = { unit: null, buff: null, magic: null };
         this.hasLootGoblin = false;
         this.lootGoblinReward = false;
+        
+        // PVP context
+        this.isPVPContext = false;
+        this.pvpManager = null;
     }
 
     preload() {
@@ -64,6 +68,12 @@ export class BattleScene extends Phaser.Scene {
         this.turnSystem = new TurnSystem(this);
         this.spellSystem = new SpellSystem(this);
         this.uiManager = new UIManager(this);
+
+        // Handle PVP context
+        if (data && data.isPVPContext) {
+            this.isPVPContext = true;
+            this.pvpManager = data.pvpManager;
+        }
 
         // Track battle number for scaling
         if (data && data.battleNumber) {
@@ -791,6 +801,16 @@ export class BattleScene extends Phaser.Scene {
             document.getElementById('defeat-message').style.display = 'block';
             document.getElementById('victory-subtitle').style.display = 'none';
             confirmBtn.style.display = 'none';
+            
+            // If in PVP context, report defeat to PVPMatchScene
+            if (this.isPVPContext) {
+                setTimeout(() => {
+                    const pvpMatchScene = this.scene.get('PVPMatchScene');
+                    if (pvpMatchScene) {
+                        pvpMatchScene.reportBattleComplete(false, [], this.magicBuffs);
+                    }
+                }, 3000); // Give player time to see defeat message
+            }
         }
 
         victoryScreen.classList.remove('hidden');
@@ -1560,6 +1580,15 @@ export class BattleScene extends Phaser.Scene {
         
         const nextBattleNumber = this.battleNumber + 1;
         
+        // If in PVP context, report to PVPMatchScene instead of restarting
+        if (this.isPVPContext) {
+            const pvpMatchScene = this.scene.get('PVPMatchScene');
+            if (pvpMatchScene) {
+                pvpMatchScene.reportBattleComplete(true, playerUnits, this.magicBuffs);
+            }
+            return;
+        }
+        
         this.scene.restart({
             battleNumber: nextBattleNumber,
             placedUnits: playerUnits,
@@ -1600,6 +1629,10 @@ export class PreGameScene extends Phaser.Scene {
         this.placedUnits = [];
         this.placementMode = false;
         this.unitsToPlace = [];
+        
+        // PVP mode
+        this.isPVPMode = false;
+        this.pvpManager = null;
     }
 
     create() {
@@ -1749,9 +1782,114 @@ export class PreGameScene extends Phaser.Scene {
         this.placementMode = false;
         document.getElementById('placement-bar').classList.add('hidden');
         
-        this.scene.start('BattleScene', {
-            placedUnits: this.placedUnits,
-            battleNumber: 1
+        if (this.isPVPMode && this.pvpManager) {
+            // Start PVP tournament
+            this.scene.start('PVPMatchScene', {
+                pvpManager: this.pvpManager,
+                sessionKey: this.pvpManager.getSessionKey(),
+                playerNumber: this.pvpManager.getPlayerNumber(),
+                army: this.placedUnits,
+                magicBuffs: []
+            });
+        } else {
+            // Normal PVE mode
+            this.scene.start('BattleScene', {
+                placedUnits: this.placedUnits,
+                battleNumber: 1
+            });
+        }
+    }
+
+    // ============================================
+    // PVP METHODS
+    // ============================================
+
+    setGameMode(mode) {
+        this.isPVPMode = (mode === 'pvp');
+        
+        const pvpMenu = document.getElementById('pvp-menu');
+        const pvpWaiting = document.getElementById('pvp-waiting');
+        const modePVE = document.getElementById('mode-pve');
+        const modePVP = document.getElementById('mode-pvp');
+        
+        if (this.isPVPMode) {
+            pvpMenu.style.display = 'block';
+            modePVP.style.background = '#4a7c59';
+            modePVE.style.background = '#5D4E3E';
+        } else {
+            pvpMenu.style.display = 'none';
+            pvpWaiting.style.display = 'none';
+            modePVE.style.background = '#4a7c59';
+            modePVP.style.background = '#5D4E3E';
+        }
+    }
+
+    async createPVPSession() {
+        try {
+            // Initialize PVP manager
+            const { PVPManager } = await import('./PVPManager.js');
+            this.pvpManager = new PVPManager(this);
+            this.pvpManager.setEnabled(true);
+            
+            // Create session
+            const sessionKey = await this.pvpManager.createSession();
+            
+            // Show waiting UI
+            document.getElementById('pvp-menu').style.display = 'none';
+            document.getElementById('pvp-waiting').style.display = 'block';
+            document.getElementById('pvp-session-key').textContent = sessionKey;
+            
+            // Listen for opponent
+            this.pvpManager.onOpponentConnected = (opponent) => {
+                document.getElementById('pvp-player-status').textContent = `${opponent.name} connected! Starting...`;
+                document.getElementById('pvp-player-status').style.color = '#4CAF50';
+                
+                // Auto-hide waiting screen after a moment
+                setTimeout(() => {
+                    document.getElementById('pvp-waiting').style.display = 'none';
+                }, 1500);
+            };
+            
+        } catch (error) {
+            console.error('Failed to create PVP session:', error);
+            alert('Failed to create session. Please try again.');
+        }
+    }
+
+    async joinPVPSession() {
+        const keyInput = document.getElementById('pvp-join-key');
+        const sessionKey = keyInput.value.trim().toUpperCase();
+        
+        if (!sessionKey || sessionKey.length !== 6) {
+            alert('Please enter a valid 6-character session key');
+            return;
+        }
+        
+        try {
+            // Initialize PVP manager
+            const { PVPManager } = await import('./PVPManager.js');
+            this.pvpManager = new PVPManager(this);
+            this.pvpManager.setEnabled(true);
+            
+            // Join session
+            await this.pvpManager.joinSession(sessionKey);
+            
+            // Hide menu
+            document.getElementById('pvp-menu').style.display = 'none';
+            
+        } catch (error) {
+            console.error('Failed to join session:', error);
+            alert(error.message || 'Failed to join session. Check the key and try again.');
+        }
+    }
+
+    copySessionKey() {
+        const key = document.getElementById('pvp-session-key').textContent;
+        navigator.clipboard.writeText(key).then(() => {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = originalText, 1500);
         });
     }
 }

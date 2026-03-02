@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steel and Sigils - Tactical Combat</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="style.css">
     <!-- units.js provides UNIT_TYPES globally -->
     <script src="units.js"></script>
@@ -63,6 +66,54 @@
     <!-- Pre-game Army Selection -->
     <div id="pregame-screen" class="victory-screen">
         <h2 style="color: #A68966;">⚔️ Army Selection ⚔️</h2>
+        
+        <!-- PVP Mode Toggle -->
+        <div style="margin-bottom: 20px;">
+            <div id="mode-selector" style="display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 15px;">
+                <button id="mode-pve" class="spell-button" style="background: #4a7c59;" onclick="gameScene.setGameMode('pve')">
+                    🎮 PVE Mode
+                </button>
+                <button id="mode-pvp" class="spell-button" onclick="gameScene.setGameMode('pvp')">
+                    ⚔️ PVP Mode
+                </button>
+            </div>
+            <div id="pvp-menu" style="display: none; background: #2D241E; border: 2px solid #A68966; border-radius: 4px; padding: 15px; max-width: 500px; margin: 0 auto;">
+                <div style="color: #A68966; font-weight: bold; margin-bottom: 10px;">🏆 PVP Tournament</div>
+                <div style="color: #B8A896; font-size: 12px; margin-bottom: 15px;">
+                    Battle through 5 rounds, then face your opponent in the final round!
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="spell-button" onclick="gameScene.createPVPSession()" style="background: #4a7c59;">
+                        📋 Create Session
+                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="pvp-join-key" placeholder="Enter Session Key" style="flex: 1; padding: 8px; background: #1A1C1E; border: 1px solid #5D4E3E; color: #E3D5B8; border-radius: 4px; text-transform: uppercase;">
+                        <button class="spell-button" onclick="gameScene.joinPVPSession()" style="padding: 8px 16px;">
+                            🔗 Join
+                        </button>
+                    </div>
+                    <button class="spell-button" onclick="gameScene.setGameMode('pve')" style="background: #5D4E3E;">
+                        ← Back to PVE
+                    </button>
+                </div>
+            </div>
+            <div id="pvp-waiting" style="display: none; background: #2D241E; border: 2px solid #4a7cd9; border-radius: 4px; padding: 15px; max-width: 500px; margin: 0 auto;">
+                <div style="color: #4a7cd9; font-weight: bold; margin-bottom: 10px;">⏳ Waiting for opponent...</div>
+                <div style="background: #1A1C1E; border: 1px solid #5D4E3E; border-radius: 4px; padding: 10px; margin-bottom: 10px;">
+                    <div style="color: #8B7355; font-size: 11px; margin-bottom: 5px;">Share this key with your opponent:</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="pvp-session-key" style="color: #FFD700; font-size: 24px; font-weight: bold; letter-spacing: 4px; font-family: monospace;">------</span>
+                        <button class="spell-button" onclick="gameScene.copySessionKey()" style="padding: 4px 12px; font-size: 11px;">
+                            📋 Copy
+                        </button>
+                    </div>
+                </div>
+                <div style="color: #B8A896; font-size: 12px;">
+                    <span id="pvp-player-status">Waiting for player 2...</span>
+                </div>
+            </div>
+        </div>
+        
         <p style="color: #E3D5B8; margin-bottom: 10px; font-size: 18px;">Spend your points wisely!</p>
         <div class="mana-display" style="margin-bottom: 20px;">
             💰 Points: <span id="points-remaining">1000</span>/1000
@@ -223,6 +274,79 @@
         <button id="confirm-army" class="spellbook-close" onclick="gameScene.confirmArmySelection()" disabled>
             Confirm Army (0 units)
         </button>
+    </div>
+
+    <!-- PVP Placement Screen (for final round placement) -->
+    <div id="pvp-placement-screen" class="victory-screen hidden">
+        <h2 style="color: #A68966;">⚔️ Final Battle - Unit Placement ⚔️</h2>
+        <p style="color: #E3D5B8; margin-bottom: 10px; font-size: 16px;">Place your army on your side of the battlefield</p>
+        <div style="color: #4a7cd9; font-size: 14px; margin-bottom: 20px;">
+            You are on the <span id="pvp-your-side" style="font-weight: bold; color: #FFD700;">LEFT</span> side
+        </div>
+        <div id="pvp-placement-status" style="background: #2D241E; border: 2px solid #5D4E3E; border-radius: 4px; padding: 15px; max-width: 400px; margin: 0 auto 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color: #8B7355;">Your Status:</span>
+                <span id="pvp-your-ready" style="color: #ff4444;">❌ Not Ready</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #8B7355;">Opponent Status:</span>
+                <span id="pvp-opponent-ready" style="color: #ff4444;">❌ Not Ready</span>
+            </div>
+        </div>
+        <div id="pvp-placement-bar" style="margin-bottom: 20px;">
+            <div style="color: #A68966; font-weight: bold; margin-bottom: 10px;">
+                📍 Place <span id="pvp-units-to-place">0</span> units on your side
+            </div>
+            <div style="color: #8B7355; font-size: 12px; margin-bottom: 15px;">
+                Click on highlighted tiles to place your units
+            </div>
+        </div>
+        <button id="pvp-confirm-placement" class="spellbook-close" onclick="gameScene.confirmPVPPlacement()" disabled>
+            ✅ Confirm Placement
+        </button>
+    </div>
+
+    <!-- PVP Spectator Screen -->
+    <div id="pvp-spectator-screen" class="victory-screen hidden" style="background: rgba(0,0,0,0.9);">
+        <div style="position: absolute; top: 20px; right: 20px; background: #2D241E; border: 2px solid #A68966; border-radius: 4px; padding: 15px; max-width: 300px;">
+            <div style="color: #A68966; font-weight: bold; margin-bottom: 10px;">👁️ Spectator Mode</div>
+            <div style="color: #B8A896; font-size: 12px; margin-bottom: 10px;">
+                Watching: <span id="spectator-opponent-name" style="color: #4a7cd9;">Opponent</span>
+            </div>
+            <div style="background: #1A1C1E; border-radius: 4px; padding: 10px;">
+                <div style="color: #8B7355; font-size: 11px; margin-bottom: 5px;">Their Progress:</div>
+                <div style="color: #E3D5B8; font-size: 18px; font-weight: bold;">
+                    Battle <span id="spectator-battle-num">1</span>/5
+                </div>
+                <div style="width: 100%; height: 6px; background: #1A1C1E; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+                    <div id="spectator-progress-bar" style="width: 20%; height: 100%; background: #4a7cd9; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <div style="color: #8B7355; font-size: 11px; margin-top: 10px; font-style: italic;">
+                You'll face them in battle once they finish round 5!
+            </div>
+        </div>
+        <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #8B7355; font-size: 14px;">
+            ⌛ Waiting for opponent to finish their battles...
+        </div>
+    </div>
+
+    <!-- PVP Match Progress Overlay (shown during PVE rounds in PVP mode) -->
+    <div id="pvp-progress-overlay" class="hidden" style="position: fixed; top: 80px; right: 20px; background: #2D241E; border: 2px solid #A68966; border-radius: 4px; padding: 12px; z-index: 200; min-width: 200px;">
+        <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; text-align: center; border-bottom: 1px solid #5D4E3E; padding-bottom: 5px;">
+            🏆 PVP Tournament
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: #4a7cd9; font-size: 12px;">You:</span>
+            <span id="pvp-your-progress" style="color: #E3D5B8; font-weight: bold; font-size: 14px;">Battle 1/5</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #d94a4a; font-size: 12px;">Opponent:</span>
+            <span id="pvp-opponent-progress" style="color: #E3D5B8; font-weight: bold; font-size: 14px;">Waiting...</span>
+        </div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #5D4E3E; text-align: center;">
+            <span id="pvp-status-text" style="color: #8B7355; font-size: 11px; font-style: italic;">First to round 6 wins!</span>
+        </div>
     </div>
 
     <!-- Victory Screen -->
