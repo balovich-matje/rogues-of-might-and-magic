@@ -113,22 +113,27 @@ export class PVPBattleScene extends Phaser.Scene {
     // ============================================
 
     _createPVPUnits() {
-        // Create my units
+        console.log(`[PVP] Creating units - I am on ${this.playerSide.toUpperCase()} side`);
+        console.log(`[PVP] My army: ${this.myArmy.length} units, Opponent army: ${this.opponentArmy.length} units`);
+        
+        // Create my units at their placed positions
         for (const unitData of this.myArmy) {
+            console.log(`[PVP] Creating my unit ${unitData.type} at (${unitData.x}, ${unitData.y})`);
             const unit = this.unitManager.addUnit(unitData.type, unitData.x, unitData.y);
             if (unit) {
                 this._restoreUnitStats(unit, unitData);
-                // Override isPlayer based on side
+                // Set isPlayer based on my side
                 unit.isPlayer = (this.playerSide === 'left');
             }
         }
         
-        // Create opponent units (mirrored positions)
+        // Create opponent units at their placed positions (they're already on the opposite side)
         for (const unitData of this.opponentArmy) {
-            const mirrorX = (CONFIG.GRID_WIDTH - 1) - unitData.x;
-            const unit = this.unitManager.addUnit(unitData.type, mirrorX, unitData.y);
+            console.log(`[PVP] Creating opponent unit ${unitData.type} at (${unitData.x}, ${unitData.y})`);
+            const unit = this.unitManager.addUnit(unitData.type, unitData.x, unitData.y);
             if (unit) {
                 this._restoreUnitStats(unit, unitData);
+                // Set isPlayer based on opponent's side (opposite of mine)
                 unit.isPlayer = (this.playerSide !== 'left');
             }
         }
@@ -181,6 +186,16 @@ export class PVPBattleScene extends Phaser.Scene {
         }
         
         unit.updateHealthBar();
+    }
+
+    // ============================================
+    // AI MOVEMENT
+    // ============================================
+
+    moveUnitAI(unit, newX, newY) {
+        console.log(`[AI Movement] ${unit.name} moving from (${unit.gridX},${unit.gridY}) to (${newX},${newY})`);
+        this.unitManager.updateUnitPosition(unit, newX, newY);
+        // Note: hasMoved is NOT set here - AI handles that separately after all movement
     }
 
     _applyMagicBuffs() {

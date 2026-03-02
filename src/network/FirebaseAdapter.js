@@ -259,6 +259,13 @@ export class FirebaseAdapter extends NetworkAdapter {
      * Initialize PVP round with random side assignment
      */
     async initPVPRound() {
+        // Check if sides already assigned to prevent reassignment
+        const snapshot = await this.sessionRef.child('pvpRound/sidesAssigned').once('value');
+        if (snapshot.val()) {
+            console.log('[PVP] Sides already assigned, skipping reassignment');
+            return;
+        }
+        
         const player1Side = Math.random() < 0.5 ? 'left' : 'right';
         const player2Side = player1Side === 'left' ? 'right' : 'left';
         
@@ -269,6 +276,7 @@ export class FirebaseAdapter extends NetworkAdapter {
             pvpRound: {
                 player1Side: player1Side,
                 player2Side: player2Side,
+                sidesAssigned: true,
                 player1Ready: false,
                 player2Ready: false,
                 battleStarted: false,
