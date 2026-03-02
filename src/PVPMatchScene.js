@@ -44,19 +44,25 @@ export class PVPMatchScene extends Phaser.Scene {
         // Save army to Firebase
         this.pvpManager.updateProgress(6, this.myArmy);
         
-        // Show waiting UI
-        this._showWaitingUI();
+        console.log(`[PVP] Player ${this.playerNumber} created PVPMatchScene`);
+        console.log(`[PVP] Opponent connected: ${this.pvpManager.isOpponentConnected()}`);
         
         // Check if both players are already connected
         if (this.pvpManager.isOpponentConnected()) {
             const opponentData = this.pvpManager.getOpponentData();
+            console.log(`[PVP] Opponent data:`, opponentData);
             if (opponentData && opponentData.currentBattle >= 6) {
                 // Both ready, skip placement and go directly to battle
                 this.opponentArmy = opponentData.army;
-                console.log('[PVP] Both players ready, starting battle...');
+                console.log('[PVP] Both players ready at create(), starting battle...');
                 this._startBattle();
+                return;
             }
         }
+        
+        // Show waiting UI only if not starting battle immediately
+        console.log('[PVP] Showing waiting UI...');
+        this._showWaitingUI();
     }
 
     // ============================================
@@ -66,19 +72,19 @@ export class PVPMatchScene extends Phaser.Scene {
     _setupCallbacks() {
         // Opponent connected or updated
         this.pvpManager.onOpponentProgressUpdate = (progress) => {
-            console.log('[PVP] Opponent progress:', progress);
+            console.log('[PVP] Opponent progress update:', progress);
+            console.log(`[PVP] isWaitingForOpponent: ${this.isWaitingForOpponent}`);
             
             if (progress >= 6) {
                 // Opponent has their army ready
                 const opponentData = this.pvpManager.getOpponentData();
+                console.log('[PVP] Opponent data:', opponentData);
                 if (opponentData && opponentData.army) {
                     this.opponentArmy = opponentData.army;
                     
-                    // If we're also ready, start battle directly (skip placement)
-                    if (!this.isWaitingForOpponent) {
-                        console.log('[PVP] Both ready, starting battle...');
-                        this._startBattle();
-                    }
+                    // Start battle immediately when both have armies
+                    console.log('[PVP] Both have armies, starting battle...');
+                    this._startBattle();
                 }
             }
         };
@@ -151,23 +157,15 @@ export class PVPMatchScene extends Phaser.Scene {
     // PLACEMENT
     // ============================================
 
+    // NOTE: This function is deprecated - we now skip placement and go directly to battle
+    // Keeping for reference but should not be called
     async _startPlacement() {
+        console.warn('[PVP] _startPlacement() called but deprecated - use _startBattle() instead');
         this.isWaitingForOpponent = false;
         this._hideWaitingUI();
         
-        // Initialize PVP round with random sides
-        if (this.playerNumber === 1 && this.pvpManager.network) {
-            await this.pvpManager.network.initPVPRound();
-        }
-        
-        // Wait for side assignment
-        const checkInterval = setInterval(() => {
-            const mySide = this.pvpManager.getMySide();
-            if (mySide) {
-                clearInterval(checkInterval);
-                this._showPlacementScene(mySide);
-            }
-        }, 500);
+        // Go directly to battle instead
+        this._startBattle();
     }
 
     _showPlacementScene(mySide) {
