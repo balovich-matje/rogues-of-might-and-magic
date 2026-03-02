@@ -26,9 +26,6 @@ export class FirebaseAdapter extends NetworkAdapter {
     // ============================================
 
     async createSession() {
-        // Clean up old sessions first
-        await this._cleanupOldSessions();
-        
         const sessionKey = this.generateSessionKey();
         const sessionRef = this.database.ref(`sessions/${sessionKey}`);
         
@@ -73,9 +70,6 @@ export class FirebaseAdapter extends NetworkAdapter {
     }
 
     async joinSession(sessionKey) {
-        // Clean up old sessions first
-        await this._cleanupOldSessions();
-        
         const normalizedKey = sessionKey.toUpperCase().trim();
         const sessionRef = this.database.ref(`sessions/${normalizedKey}`);
         
@@ -362,40 +356,14 @@ export class FirebaseAdapter extends NetworkAdapter {
     }
 
     /**
-     * Clean up old/expired sessions on app start
+     * Clean up old/expired sessions - requires broader Firebase rules
+     * Currently disabled due to permission restrictions
      */
     async _cleanupOldSessions() {
-        try {
-            const now = Date.now();
-            const sessionsRef = this.database.ref('sessions');
-            const snapshot = await sessionsRef.once('value');
-            const sessions = snapshot.val();
-            
-            if (!sessions) return;
-            
-            const cleanupPromises = [];
-            
-            for (const [key, session] of Object.entries(sessions)) {
-                // Delete if expired or older than 5 minutes with no updates
-                const isExpired = session.expiresAt && session.expiresAt < now;
-                const isOld = session.updatedAt && (now - session.updatedAt > 5 * 60 * 1000);
-                const isFinished = session.state === 'finished';
-                
-                // Also delete if both players disconnected
-                const bothDisconnected = session.player1 && !session.player1.connected &&
-                                        (!session.player2 || !session.player2.connected);
-                
-                if (isExpired || isOld || isFinished || bothDisconnected) {
-                    console.log(`[PVP] Cleaning up old session: ${key}`);
-                    cleanupPromises.push(sessionsRef.child(key).remove());
-                }
-            }
-            
-            await Promise.all(cleanupPromises);
-            
-        } catch (error) {
-            console.error('[PVP] Error cleaning up old sessions:', error);
-        }
+        // NOTE: This requires Firebase rules that allow reading all sessions
+        // For now, sessions auto-expire via the expiresAt timestamp
+        // Server-side cleanup can be done with Firebase Cloud Functions
+        return;
     }
 
     /**
