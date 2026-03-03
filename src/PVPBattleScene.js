@@ -25,7 +25,11 @@ export class PVPBattleScene extends Phaser.Scene {
         // PVP state
         this.pvpManager = null;
         this.playerNumber = null;
-        this.currentTurn = null; // Will be set based on initiative
+        
+        // Unit-based initiative system (like PVE)
+        this.turnQueue = [];
+        this.currentUnit = null;
+        this.roundNumber = 1;
         
         // Game state
         this.units = [];
@@ -107,36 +111,61 @@ export class PVPBattleScene extends Phaser.Scene {
             this._spawnUnit(u.type, u.x, u.y, opponentNumber);
         }
         
-        // Determine first turn based on highest initiative
-        this._determineFirstTurn();
+        // Initialize unit-based initiative turn system
+        this._initTurnQueue();
     }
     
-    _determineFirstTurn() {
-        // Get all units for each player
-        const player1Units = this.units.filter(u => u.owner === 1);
-        const player2Units = this.units.filter(u => u.owner === 2);
+    _initTurnQueue() {
+        // Sort all units by initiative (highest first)
+        const aliveUnits = this.units.filter(u => !u.isDead);
+        this.turnQueue = aliveUnits.sort((a, b) => b.initiative - a.initiative);
         
-        // Find highest initiative for each player
-        const getMaxInitiative = (units) => {
-            if (units.length === 0) return 0;
-            return Math.max(...units.map(u => u.initiative || 0));
-        };
+        console.log('[PVPBattleScene] Turn queue initialized:', this.turnQueue.map(u => `${u.name}(init:${u.initiative})`).join(', '));
         
-        const p1MaxInitiative = getMaxInitiative(player1Units);
-        const p2MaxInitiative = getMaxInitiative(player2Units);
+        // Start first turn
+        this._nextTurn();
+    }
+    
+    _nextTurn() {
+        // Remove dead units from queue
+        this.turnQueue = this.turnQueue.filter(u => !u.isDead);
         
-        // Player with higher initiative goes first
-        if (p1MaxInitiative > p2MaxInitiative) {
-            this.currentTurn = 1;
-            console.log('[PVPBattleScene] Player 1 goes first (initiative:', p1MaxInitiative, 'vs', p2MaxInitiative, ')');
-        } else if (p2MaxInitiative > p1MaxInitiative) {
-            this.currentTurn = 2;
-            console.log('[PVPBattleScene] Player 2 goes first (initiative:', p2MaxInitiative, 'vs', p1MaxInitiative, ')');
-        } else {
-            // Tie - player 1 goes first
-            this.currentTurn = 1;
-            console.log('[PVPBattleScene] Player 1 goes first (tie, both have initiative:', p1MaxInitiative, ')');
+        if (this.turnQueue.length === 0) {
+            this._startNewRound();
+            return;
         }
+        
+        this.currentUnit = this.turnQueue.shift();
+        
+        if (this.currentUnit.isDead) {
+            this._nextTurn();
+            return;
+        }
+        
+        this.currentUnit.resetTurn();
+        this._showTurnIndicator();
+        
+        // If it's not this player's unit, wait for opponent's action
+        if (this.currentUnit.owner !== this.playerNumber) {
+            console.log('[PVPBattleScene] Waiting for opponent to move:', this.currentUnit.name);
+            this._deselect();
+        } else {
+            console.log('[PVPBattleScene] Your turn:', this.currentUnit.name);
+            this.selectUnit(this.currentUnit);
+        }
+    }
+    
+    _startNewRound() {
+        this.roundNumber++;
+        this.regenerateMana();
+        
+        // Reset turn queue with all alive units sorted by initiative
+        const aliveUnits = this.units.filter(u => !u.isDead);
+        this.turnQueue = aliveUnits.sort((a, b) => b.initiative - a.initiative);
+        
+        console.log('[PVPBattleScene] Starting new round:', this.roundNumber);
+        
+        this._nextTurn();
     }
 
     _spawnUnit(type, x, y, owner) {
@@ -145,6 +174,11 @@ export class PVPBattleScene extends Phaser.Scene {
         unit.alive = true;
         
         if (unit.sprite) {
+            // Flip sprite for Player 2 (right side) to face left
+            if (owner === 2) {
+                unit.sprite.setFlipX(true);
+            }
+            
             // Remove any existing listeners and add our own
             unit.sprite.removeAllListeners('pointerdown');
             unit.sprite.removeAllListeners('pointerover');
@@ -382,7 +416,7 @@ export class PVPBattleScene extends Phaser.Scene {
                 this._applySpell(action);
                 break;
             case 'end_turn':
-                this._advanceTurn();
+                this._nextTurn();
                 break;
         }
     }
@@ -423,12 +457,15 @@ export class PVPBattleScene extends Phaser.Scene {
     // ============================================
 
     _isMyTurn() {
-        return this.currentTurn === this.playerNumber;
+        // It's my turn if the current unit belongs to me
+        return this.currentUnit && this.currentUnit.owner === this.playerNumber;
     }
 
     _showTurnIndicator() {
         const existing = document.getElementById('turn-indicator');
         if (existing) existing.remove();
+        
+        if (!this.currentUnit) return;
         
         const isMyTurn = this._isMyTurn();
         const div = document.createElement('div');
@@ -439,21 +476,62 @@ export class PVPBattleScene extends Phaser.Scene {
             color: #fff; padding: 10px 30px; border-radius: 8px;
             font-size: 18px; font-weight: bold; z-index: 2000;
         `;
-        div.textContent = isMyTurn ? '⚔️ Your Turn' : '⏳ Opponent\'s Turn';
+        
+        // Show which unit's turn it is
+        const unitName = this.currentUnit.name;
+        const unitEmoji = this.currentUnit.emoji;
+        if (isMyTurn) {
+            div.textContent = `⚔️ Your Turn: ${unitEmoji} ${unitName}`;
+        } else {
+            div.textContent = `⏳ Opponent's Turn: ${unitEmoji} ${unitName}`;
+        }
+        
         document.body.appendChild(div);
+        
+        // Also show initiative queue
+        this._showInitiativeQueue();
+    }
+    
+    _showInitiativeQueue() {
+        // Remove existing queue display
+        const existing = document.getElementById('initiative-queue');
+        if (existing) existing.remove();
+        
+        // Create queue display showing upcoming units
+        const queueDiv = document.createElement('div');
+        queueDiv.id = 'initiative-queue';
+        queueDiv.style.cssText = `
+            position: fixed; top: 140px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff; padding: 8px 16px; border-radius: 8px;
+            font-size: 14px; z-index: 1999; display: flex; gap: 10px;
+            align-items: center;
+        `;
+        
+        // Show current unit and next 3 units in queue
+        const displayUnits = [this.currentUnit, ...this.turnQueue.slice(0, 3)].filter(Boolean);
+        
+        queueDiv.innerHTML = displayUnits.map((u, i) => {
+            const isCurrent = i === 0;
+            const isMine = u.owner === this.playerNumber;
+            const borderColor = isCurrent ? '#FFD700' : (isMine ? '#4CAF50' : '#f44336');
+            return `<span style="
+                border: 2px solid ${borderColor}; 
+                border-radius: 4px; 
+                padding: 2px 6px;
+                opacity: ${isCurrent ? 1 : 0.7};
+            ">${u.emoji} ${u.initiative}</span>`;
+        }).join(' → ');
+        
+        document.body.appendChild(queueDiv);
     }
 
     endTurn() {
         if (!this._isMyTurn()) return;
+        if (!this.currentUnit) return;
         
         this._syncAction({ type: 'end_turn' });
-        this._advanceTurn();
-    }
-
-    _advanceTurn() {
-        this.currentTurn = this.currentTurn === 1 ? 2 : 1;
-        this._showTurnIndicator();
-        this.mana = Math.min(this.mana + 10, this.maxMana);
+        this._nextTurn();
     }
 
     // ============================================

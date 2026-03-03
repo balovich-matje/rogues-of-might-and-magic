@@ -664,15 +664,21 @@ export class TurnSystem {
             const xDist = Math.abs(nearest.gridX - unit.gridX);
             const yDist = Math.abs(nearest.gridY - unit.gridY);
             
+            console.log(`[AI Movement] Trying to move dx=${dx}, dy=${dy} (xDist=${xDist}, yDist=${yDist})`);
+            
             if (xDist >= yDist && dx !== 0) {
                 // Try X first, then Y
                 const newX = unit.gridX + dx;
+                console.log(`[AI Movement] Trying X move to (${newX}, ${unit.gridY})`);
                 if (this.isValidMoveForUnit(unit, newX, unit.gridY)) {
+                    console.log(`[AI Movement] Moving X to (${newX}, ${unit.gridY})`);
                     this.scene.moveUnitAI(unit, newX, unit.gridY);
                     moved = true;
                 } else if (dy !== 0) {
                     const newY = unit.gridY + dy;
+                    console.log(`[AI Movement] Trying Y move to (${unit.gridX}, ${newY})`);
                     if (this.isValidMoveForUnit(unit, unit.gridX, newY)) {
+                        console.log(`[AI Movement] Moving Y to (${unit.gridX}, ${newY})`);
                         this.scene.moveUnitAI(unit, unit.gridX, newY);
                         moved = true;
                     }
@@ -680,12 +686,16 @@ export class TurnSystem {
             } else if (dy !== 0) {
                 // Try Y first, then X
                 const newY = unit.gridY + dy;
+                console.log(`[AI Movement] Trying Y move to (${unit.gridX}, ${newY})`);
                 if (this.isValidMoveForUnit(unit, unit.gridX, newY)) {
+                    console.log(`[AI Movement] Moving Y to (${unit.gridX}, ${newY})`);
                     this.scene.moveUnitAI(unit, unit.gridX, newY);
                     moved = true;
                 } else if (dx !== 0) {
                     const newX = unit.gridX + dx;
+                    console.log(`[AI Movement] Trying X move to (${newX}, ${unit.gridY})`);
                     if (this.isValidMoveForUnit(unit, newX, unit.gridY)) {
+                        console.log(`[AI Movement] Moving X to (${newX}, ${unit.gridY})`);
                         this.scene.moveUnitAI(unit, newX, unit.gridY);
                         moved = true;
                     }
@@ -795,19 +805,39 @@ export class TurnSystem {
     // Check if a move is valid for a unit (accounting for 2x2)
     isValidMoveForUnit(unit, x, y) {
         const bossSize = unit.bossSize || 1;
+        
+        // Debug for bosses
+        if (bossSize > 1) {
+            console.log(`[AI Movement] Checking valid move for ${unit.name} to (${x},${y}), size ${bossSize}x${bossSize}`);
+        }
+        
         for (let dy = 0; dy < bossSize; dy++) {
             for (let dx = 0; dx < bossSize; dx++) {
                 const checkX = x + dx;
                 const checkY = y + dy;
-                if (!this.scene.gridSystem.isValidMoveAI(checkX, checkY)) {
+                
+                // Check bounds
+                if (checkX < 0 || checkX >= CONFIG.GRID_WIDTH || 
+                    checkY < 0 || checkY >= CONFIG.GRID_HEIGHT) {
+                    if (bossSize > 1) {
+                        console.log(`[AI Movement] Out of bounds at (${checkX},${checkY})`);
+                    }
                     return false;
                 }
+                
                 // Check if occupied by another unit (not this unit)
                 const otherUnit = this.scene.unitManager.getUnitAt(checkX, checkY);
                 if (otherUnit && otherUnit !== unit) {
+                    if (bossSize > 1) {
+                        console.log(`[AI Movement] Blocked by ${otherUnit.name} at (${checkX},${checkY})`);
+                    }
                     return false;
                 }
             }
+        }
+        
+        if (bossSize > 1) {
+            console.log(`[AI Movement] Move to (${x},${y}) is VALID`);
         }
         return true;
     }
