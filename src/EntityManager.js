@@ -401,6 +401,14 @@ export class UnitManager {
         unit.updateHealthBar();
 
         unit.sprite.setInteractive();
+        
+        // Show stats on hover for both PVE and PVP modes
+        unit.sprite.on('pointerover', () => {
+            if (this.scene.uiManager) {
+                this.scene.uiManager.updateUnitInfo(unit);
+            }
+        });
+        
         unit.sprite.on('pointerdown', () => {
             // If a spell is selected, cast it at this unit's position
             if (this.scene.spellSystem.activeSpell) {
