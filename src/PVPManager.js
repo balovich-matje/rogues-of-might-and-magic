@@ -135,11 +135,16 @@ export class PVPManager {
     // ============================================
 
     _handleMessage(data) {
+        console.log('[PVPManager] Received message:', data.type, data);
         switch (data.type) {
             case 'army':
+                console.log('[PVPManager] Army received, length:', data.army?.length);
                 this.opponentArmy = data.army;
                 if (this.onOpponentArmyReceived) {
+                    console.log('[PVPManager] Calling onOpponentArmyReceived callback');
                     this.onOpponentArmyReceived(data.army);
+                } else {
+                    console.log('[PVPManager] No onOpponentArmyReceived callback set!');
                 }
                 break;
                 
@@ -161,12 +166,16 @@ export class PVPManager {
 
     send(data) {
         if (!this.isConnected) {
+            console.log('[PVPManager] Send failed - not connected');
             return false;
         }
-        return this.webrtc.send(data);
+        const result = this.webrtc.send(data);
+        console.log('[PVPManager] Send result:', result, 'type:', data.type);
+        return result;
     }
 
     sendArmy(army) {
+        console.log('[PVPManager] sendArmy called with', army.length, 'units');
         this.myArmy = army;
         return this.send({ type: 'army', army: army });
     }

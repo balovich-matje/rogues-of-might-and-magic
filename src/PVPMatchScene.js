@@ -30,7 +30,8 @@ export class PVPMatchScene extends Phaser.Scene {
     create() {
         window.gameScene = this;
         
-
+        console.log('[PVPMatchScene] Created, player:', this.playerNumber, 'army size:', this.myArmy.length);
+        console.log('[PVPMatchScene] pvpManager state - isConnected:', this.pvpManager.isConnected);
         
         // Set up callbacks
         this._setupCallbacks();
@@ -40,11 +41,15 @@ export class PVPMatchScene extends Phaser.Scene {
         
         // Send army once connected
         if (this.pvpManager.isConnected) {
+            console.log('[PVPMatchScene] Already connected, triggering _onConnected');
             this._onConnected();
+        } else {
+            console.log('[PVPMatchScene] Waiting for connection...');
         }
     }
 
     _setupCallbacks() {
+        console.log('[PVPMatchScene] Setting up callbacks');
         this.pvpManager.onConnected = () => this._onConnected();
         this.pvpManager.onDisconnected = () => this._onDisconnected();
         this.pvpManager.onOpponentArmyReceived = (army) => this._onOpponentArmy(army);
@@ -55,6 +60,8 @@ export class PVPMatchScene extends Phaser.Scene {
     // ============================================
 
     _onConnected() {
+        console.log('[PVPMatchScene] _onConnected called, player:', this.playerNumber);
+        
         // Update UI
         const statusEl = document.getElementById('pvp-connection-status');
         if (statusEl) {
@@ -67,27 +74,36 @@ export class PVPMatchScene extends Phaser.Scene {
     }
 
     _startArmyExchange() {
+        console.log('[PVPMatchScene] Starting army exchange, my army:', this.myArmy);
+        let sendCount = 0;
+        
         // Send army and retry until we receive opponent's army
         const sendArmyInterval = setInterval(() => {
             if (!this.pvpManager.isConnected) {
+                console.log('[PVPMatchScene] Not connected, stopping retry');
                 clearInterval(sendArmyInterval);
                 return;
             }
             
             if (this.opponentArmy) {
+                console.log('[PVPMatchScene] Received opponent army, stopping retry');
                 clearInterval(sendArmyInterval);
                 this._tryStartBattle();
                 return;
             }
             
             // Send our army
-            this.pvpManager.sendArmy(this.myArmy);
+            sendCount++;
+            console.log('[PVPMatchScene] Sending army (attempt', sendCount, ')');
+            const sent = this.pvpManager.sendArmy(this.myArmy);
+            console.log('[PVPMatchScene] sendArmy returned:', sent);
         }, 500); // Retry every 500ms
         
         // Stop retrying after 10 seconds (20 attempts)
         setTimeout(() => {
             clearInterval(sendArmyInterval);
             if (!this.opponentArmy) {
+                console.log('[PVPMatchScene] Timeout - failed to receive opponent army');
                 const statusEl = document.getElementById('pvp-connection-status');
                 if (statusEl) {
                     statusEl.textContent = '✗ Failed to exchange armies';
@@ -98,6 +114,7 @@ export class PVPMatchScene extends Phaser.Scene {
     }
 
     _onDisconnected() {
+        console.log('[PVPMatchScene] Disconnected');
         const statusEl = document.getElementById('pvp-connection-status');
         if (statusEl) {
             statusEl.textContent = '✗ Disconnected';
@@ -106,9 +123,12 @@ export class PVPMatchScene extends Phaser.Scene {
     }
 
     _onOpponentArmy(army) {
+        console.log('[PVPMatchScene] Received opponent army:', army);
         if (!this.opponentArmy) {
             this.opponentArmy = army;
             this._tryStartBattle();
+        } else {
+            console.log('[PVPMatchScene] Already have opponent army, ignoring duplicate');
         }
     }
 

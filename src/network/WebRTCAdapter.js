@@ -333,22 +333,37 @@ export class WebRTCAdapter {
     // ============================================
 
     _setupDataChannel(channel) {
+        console.log('[WebRTCAdapter] Setting up data channel');
+        
         channel.onopen = () => {
+            console.log('[WebRTCAdapter] Data channel opened!');
             this.isConnected = true;
-            if (this.onConnectedCallback) this.onConnectedCallback();
+            if (this.onConnectedCallback) {
+                console.log('[WebRTCAdapter] Calling onConnectedCallback');
+                this.onConnectedCallback();
+            } else {
+                console.log('[WebRTCAdapter] No onConnectedCallback set!');
+            }
         };
         
         channel.onclose = () => {
+            console.log('[WebRTCAdapter] Data channel closed');
             this.isConnected = false;
             if (this.onDisconnectedCallback) this.onDisconnectedCallback();
         };
         
         channel.onmessage = (event) => {
+            console.log('[WebRTCAdapter] onmessage received:', event.data?.substring(0, 100));
             try {
                 const data = JSON.parse(event.data);
-                if (this.onMessageCallback) this.onMessageCallback(data);
+                console.log('[WebRTCAdapter] Parsed message type:', data.type);
+                if (this.onMessageCallback) {
+                    this.onMessageCallback(data);
+                } else {
+                    console.log('[WebRTCAdapter] No onMessageCallback set!');
+                }
             } catch (e) {
-                // Ignore parse errors
+                console.log('[WebRTCAdapter] Parse error:', e.message);
             }
         };
     }
@@ -358,11 +373,19 @@ export class WebRTCAdapter {
     // ============================================
 
     send(data) {
-        if (!this.isConnected || !this.dataChannel) return false;
+        console.log('[WebRTCAdapter] send called, isConnected:', this.isConnected, 'dataChannel:', !!this.dataChannel);
+        if (!this.isConnected || !this.dataChannel) {
+            console.log('[WebRTCAdapter] Send failed - not connected or no dataChannel');
+            return false;
+        }
         try {
-            this.dataChannel.send(JSON.stringify(data));
+            const json = JSON.stringify(data);
+            console.log('[WebRTCAdapter] Sending data:', json?.substring(0, 100));
+            this.dataChannel.send(json);
+            console.log('[WebRTCAdapter] Data sent successfully');
             return true;
         } catch (e) {
+            console.log('[WebRTCAdapter] Send error:', e.message);
             return false;
         }
     }
