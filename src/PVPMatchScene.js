@@ -219,20 +219,23 @@ export class PVPMatchScene extends Phaser.Scene {
         // Hide waiting UI
         this._hideWaitingUI();
         
-        // Start battle scene
-        console.log('[PVPMatchScene] About to start PVPBattleScene');
-        try {
-            this.scene.start('PVPBattleScene', {
-                pvpManager: this.pvpManager,
-                playerNumber: this.playerNumber,
-                myArmy: this.myArmy,
-                opponentArmy: this.opponentArmy,
-                onComplete: (winner) => this._handleBattleEnd(winner)
-            });
-            console.log('[PVPMatchScene] PVPBattleScene.start() called successfully');
-        } catch (e) {
-            console.error('[PVPMatchScene] Error starting PVPBattleScene:', e);
-        }
+        // Start battle scene (deferred to avoid issues during callbacks)
+        console.log('[PVPMatchScene] About to start PVPBattleScene (deferred)');
+        setTimeout(() => {
+            console.log('[PVPMatchScene] Executing deferred scene transition');
+            try {
+                this.scene.start('PVPBattleScene', {
+                    pvpManager: this.pvpManager,
+                    playerNumber: this.playerNumber,
+                    myArmy: this.myArmy,
+                    opponentArmy: this.opponentArmy,
+                    onComplete: (winner) => this._handleBattleEnd(winner)
+                });
+                console.log('[PVPMatchScene] PVPBattleScene.start() called successfully');
+            } catch (e) {
+                console.error('[PVPMatchScene] Error starting PVPBattleScene:', e);
+            }
+        }, 100);  // Small delay to ensure we're not in a callback
     }
 
     // ============================================
