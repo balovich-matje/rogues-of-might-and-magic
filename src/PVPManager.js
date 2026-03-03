@@ -29,6 +29,9 @@ export class PVPManager {
         this.onOpponentArmyReceived = null;
         this.onManualCodeReady = null;  // For manual signaling: host offer code ready
         this.onManualAnswerReady = null;  // For manual signaling: guest answer code ready
+        
+        // Message buffer for early messages (before callbacks are set)
+        this._messageBuffer = [];
     }
 
     // ============================================
@@ -136,27 +139,51 @@ export class PVPManager {
 
     _handleMessage(data) {
         console.log('[PVPManager] Received message:', data.type, data);
-        switch (data.type) {
-            case 'army':
-                console.log('[PVPManager] Army received, length:', data.army?.length);
-                this.opponentArmy = data.army;
-                if (this.onOpponentArmyReceived) {
-                    console.log('[PVPManager] Calling onOpponentArmyReceived callback');
-                    this.onOpponentArmyReceived(data.army);
-                } else {
-                    console.log('[PVPManager] No onOpponentArmyReceived callback set!');
-                }
-                break;
-                
-            case 'action':
-                if (this.onOpponentAction) {
-                    this.onOpponentAction(data.action);
-                }
-                break;
-                
-            case 'ping':
-                this.send({ type: 'pong', time: data.time });
-                break;
+        
+        // Handle army message
+        if (data.type === 'army') {
+            console.log('[PVPManager] Army received, length:', data.army?.length);
+            this.opponentArmy = data.army;
+            
+            if (this.onOpponentArmyReceived) {
+                console.log('[PVPManager] Calling onOpponentArmyReceived callback');
+                this.onOpponentArmyReceived(data.army);
+            } else {
+                console.log('[PVPManager] No callback set - buffering army message');
+                this._messageBuffer.push(data);
+            }
+            return;
+        }
+        
+        // Handle action message
+        if (data.type === 'action') {
+            if (this.onOpponentAction) {
+                this.onOpponentAction(data.action);
+            } else {
+                console.log('[PVPManager] No action callback set - buffering');
+                this._messageBuffer.push(data);
+            }
+            return;
+        }
+        
+        // Handle ping
+        if (data.type === 'ping') {
+            this.send({ type: 'pong', time: data.time });
+        }
+    }
+    
+    // Process any buffered messages after callbacks are set
+    processBufferedMessages() {
+        console.log('[PVPManager] Processing', this._messageBuffer.length, 'buffered messages');
+        while (this._messageBuffer.length > 0) {
+            const data = this._messageBuffer.shift();
+            console.log('[PVPManager] Processing buffered message:', data.type);
+            
+            if (data.type === 'army' && this.onOpponentArmyReceived) {
+                this.onOpponentArmyReceived(data.army);
+            } else if (data.type === 'action' && this.onOpponentAction) {
+                this.onOpponentAction(data.action);
+            }
         }
     }
 

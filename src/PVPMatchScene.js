@@ -53,6 +53,9 @@ export class PVPMatchScene extends Phaser.Scene {
         this.pvpManager.onConnected = () => this._onConnected();
         this.pvpManager.onDisconnected = () => this._onDisconnected();
         this.pvpManager.onOpponentArmyReceived = (army) => this._onOpponentArmy(army);
+        
+        // Process any messages that arrived before callbacks were set
+        this.pvpManager.processBufferedMessages();
     }
 
     // ============================================
