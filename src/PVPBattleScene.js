@@ -195,6 +195,14 @@ export class PVPBattleScene extends Phaser.Scene {
     // SELECTION & MOVEMENT
     // ============================================
 
+    // Called by GridSystem when a unit is clicked
+    selectUnit(unit) {
+        // Only allow selecting own units on your turn
+        if (unit.owner !== this.playerNumber) return;
+        if (!this._isMyTurn()) return;
+        this._selectUnit(unit);
+    }
+
     _selectUnit(unit) {
         this._deselect();
         this.selectedUnit = unit;
@@ -211,6 +219,12 @@ export class PVPBattleScene extends Phaser.Scene {
         }
         this.selectedUnit = null;
         this.gridSystem.clearHighlights();
+    }
+
+    // Called by GridSystem when a valid move is clicked
+    moveUnit(unit, tx, ty) {
+        if (unit !== this.selectedUnit) return;
+        this._tryMove(tx, ty);
     }
 
     _tryMove(tx, ty) {
