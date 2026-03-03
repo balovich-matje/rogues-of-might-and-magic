@@ -41,6 +41,8 @@ export class PVPBattleScene extends Phaser.Scene {
     init(data) {
         this.pvpManager = data.pvpManager;
         this.playerNumber = data.playerNumber;
+        this.myArmy = data.myArmy;
+        this.opponentArmy = data.opponentArmy;
         this.onComplete = data.onComplete;
         
         // Set up action handler
