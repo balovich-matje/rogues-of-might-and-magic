@@ -156,10 +156,25 @@ export class PVPMatchScene extends Phaser.Scene {
     // ============================================
 
     _tryStartBattle() {
-        if (this.battleStarted) return;
-        if (!this.pvpManager.isConnected) return;
-        if (!this.opponentArmy) return;
+        console.log('[PVPMatchScene] _tryStartBattle called');
+        console.log('[PVPMatchScene] battleStarted:', this.battleStarted);
+        console.log('[PVPMatchScene] isConnected:', this.pvpManager?.isConnected);
+        console.log('[PVPMatchScene] opponentArmy:', this.opponentArmy);
         
+        if (this.battleStarted) {
+            console.log('[PVPMatchScene] Battle already started, returning');
+            return;
+        }
+        if (!this.pvpManager?.isConnected) {
+            console.log('[PVPMatchScene] Not connected, returning');
+            return;
+        }
+        if (!this.opponentArmy) {
+            console.log('[PVPMatchScene] No opponent army, returning');
+            return;
+        }
+        
+        console.log('[PVPMatchScene] All conditions met - starting battle!');
         this.battleStarted = true;
         
         // Hide waiting UI
