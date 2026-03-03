@@ -315,7 +315,7 @@ export class PVPBattleScene extends Phaser.Scene {
         
         // Apply
         target.health -= damage;
-        this.uiManager.showFloatingText(target.gridX, target.gridY, `-${damage}`, '#ff4444');
+        this.uiManager.showFloatingText(`-${damage}`, target.sprite.x, target.sprite.y - 40, '#ff4444');
         
         // Animation
         if (attacker.sprite) {
@@ -375,7 +375,7 @@ export class PVPBattleScene extends Phaser.Scene {
             const target = this._getUnitAt(x, y);
             if (target) {
                 target.health -= spell.power;
-                this.uiManager.showFloatingText(x, y, `-${spell.power}`, '#ff8800');
+                this.uiManager.showFloatingText(`-${spell.power}`, target.sprite.x, target.sprite.y - 40, '#ff8800');
                 if (target.health <= 0) this._killUnit(target);
             }
         }
@@ -435,7 +435,7 @@ export class PVPBattleScene extends Phaser.Scene {
         const target = this._getUnitAt(a.targetX, a.targetY);
         if (target) {
             target.health -= a.damage;
-            this.uiManager.showFloatingText(a.targetX, a.targetY, `-${a.damage}`, '#ff4444');
+            this.uiManager.showFloatingText(`-${a.damage}`, target.sprite.x, target.sprite.y - 40, '#ff4444');
             if (target.health <= 0) this._killUnit(target);
             this._checkWin();
         }
@@ -446,7 +446,7 @@ export class PVPBattleScene extends Phaser.Scene {
         const target = this._getUnitAt(a.targetX, a.targetY);
         if (target) {
             target.health -= 20;
-            this.uiManager.showFloatingText(a.targetX, a.targetY, `-20`, '#ff8800');
+            this.uiManager.showFloatingText(`-20`, target.sprite.x, target.sprite.y - 40, '#ff8800');
             if (target.health <= 0) this._killUnit(target);
             this._checkWin();
         }
@@ -488,42 +488,30 @@ export class PVPBattleScene extends Phaser.Scene {
         
         document.body.appendChild(div);
         
-        // Also show initiative queue
-        this._showInitiativeQueue();
+        // Also update initiative queue display (using existing PVE element)
+        this._updateInitiativeBar();
     }
     
-    _showInitiativeQueue() {
-        // Remove existing queue display
-        const existing = document.getElementById('initiative-queue');
-        if (existing) existing.remove();
+    _updateInitiativeBar() {
+        const queueEl = document.getElementById('initiative-queue');
+        if (!queueEl) return;
         
-        // Create queue display showing upcoming units
-        const queueDiv = document.createElement('div');
-        queueDiv.id = 'initiative-queue';
-        queueDiv.style.cssText = `
-            position: fixed; top: 140px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff; padding: 8px 16px; border-radius: 8px;
-            font-size: 14px; z-index: 1999; display: flex; gap: 10px;
-            align-items: center;
-        `;
+        // Build queue: current unit + next up to 7 units (same as PVE)
+        const displayQueue = [this.currentUnit, ...this.turnQueue.slice(0, 7)];
         
-        // Show current unit and next 3 units in queue
-        const displayUnits = [this.currentUnit, ...this.turnQueue.slice(0, 3)].filter(Boolean);
+        let html = '';
+        displayQueue.forEach((unit, index) => {
+            if (!unit || unit.isDead) return;
+            const isActive = index === 0;
+            const activeClass = isActive ? 'active' : '';
+            html += `
+                <div class="initiative-unit ${activeClass}">
+                    <div class="unit-emoji">${unit.emoji}</div>
+                </div>
+            `;
+        });
         
-        queueDiv.innerHTML = displayUnits.map((u, i) => {
-            const isCurrent = i === 0;
-            const isMine = u.owner === this.playerNumber;
-            const borderColor = isCurrent ? '#FFD700' : (isMine ? '#4CAF50' : '#f44336');
-            return `<span style="
-                border: 2px solid ${borderColor}; 
-                border-radius: 4px; 
-                padding: 2px 6px;
-                opacity: ${isCurrent ? 1 : 0.7};
-            ">${u.emoji} ${u.initiative}</span>`;
-        }).join(' → ');
-        
-        document.body.appendChild(queueDiv);
+        queueEl.innerHTML = html;
     }
 
     endTurn() {
