@@ -2054,13 +2054,11 @@ export class PreGameScene extends Phaser.Scene {
             manualUI.remove();
         }
         
-        // Proceed to PVP match scene
-        this.scene.start('PVPMatchScene', {
-            pvpManager: this.pvpManager,
-            sessionKey: this.pvpManager.getSessionKey(),
-            playerNumber: this.pvpManager.getPlayerNumber(),
-            army: []
-        });
+        // Show PVP session info and let user continue with army selection
+        // The confirmPlacement() function will handle transition to PVPMatchScene
+        document.getElementById('pvp-waiting').style.display = 'none';
+        document.getElementById('pvp-session-info').style.display = 'block';
+        document.getElementById('pvp-active-key').textContent = this.pvpManager.getSessionKey();
     }
     
     _showAssignedSide(side) {
