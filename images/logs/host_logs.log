@@ -1,0 +1,179 @@
+main.js:6 Steel and Sigils v0.22
+phaser.min.js:1      Phaser v3.70.0 (WebGL | Web Audio)  https://phaser.io
+WebRTCAdapter.js:336 [WebRTCAdapter] Setting up data channel
+WebRTCAdapter.js:339 [WebRTCAdapter] Data channel opened!
+WebRTCAdapter.js:342 [WebRTCAdapter] Calling onConnectedCallback
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:152 [PVPManager] No callback set - buffering army message
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:152 [PVPManager] No callback set - buffering army message
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:152 [PVPManager] No callback set - buffering army message
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:152 [PVPManager] No callback set - buffering army message
+SceneManager.js:1823 [PreGameScene] confirmPlacement called, placedUnits: (2) [{…}, {…}]
+SceneManager.js:1824 [PreGameScene] isPVPMode: true pvpManager: true
+SceneManager.js:1827 [PreGameScene] Starting PVPMatchScene with army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:33 [PVPMatchScene] ==== CREATED ====
+PVPMatchScene.js?v=1772521616186:34 [PVPMatchScene] Player: 1 isHost: true
+PVPMatchScene.js?v=1772521616186:35 [PVPMatchScene] Army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:36 [PVPMatchScene] Army length: 2
+PVPMatchScene.js?v=1772521616186:37 [PVPMatchScene] pvpManager.isConnected: true
+PVPMatchScene.js?v=1772521616186:38 [PVPMatchScene] pvpManager.opponentArmy: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:62 [PVPMatchScene] Setting up callbacks
+PVPManager.js?v=1772521616526:177 [PVPManager] Processing 4 buffered messages
+PVPManager.js?v=1772521616526:180 [PVPManager] Processing buffered message: army
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:165 [PVPMatchScene] _tryStartBattle called
+PVPMatchScene.js?v=1772521616186:166 [PVPMatchScene] battleStarted: false
+PVPMatchScene.js?v=1772521616186:167 [PVPMatchScene] isConnected: true
+PVPMatchScene.js?v=1772521616186:168 [PVPMatchScene] opponentArmy: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:183 [PVPMatchScene] All conditions met - starting battle!
+PVPManager.js?v=1772521616526:180 [PVPManager] Processing buffered message: army
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+PVPManager.js?v=1772521616526:180 [PVPManager] Processing buffered message: army
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+PVPManager.js?v=1772521616526:180 [PVPManager] Processing buffered message: army
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+PVPMatchScene.js?v=1772521616186:54 [PVPMatchScene] Already connected, calling _onConnected
+PVPMatchScene.js?v=1772521616186:76 [PVPMatchScene] ==== _onConnected CALLED ====
+PVPMatchScene.js?v=1772521616186:77 [PVPMatchScene] Player: 1
+PVPMatchScene.js?v=1772521616186:78 [PVPMatchScene] isConnected: true
+PVPMatchScene.js?v=1772521616186:88 [PVPMatchScene] About to call _startArmyExchange
+PVPMatchScene.js?v=1772521616186:93 [PVPMatchScene] ==== STARTING ARMY EXCHANGE ====
+PVPMatchScene.js?v=1772521616186:94 [PVPMatchScene] My army: [{"type":"RANGER","x":0,"y":0},{"type":"RANGER","x":0,"y":7}]
+PVPMatchScene.js?v=1772521616186:95 [PVPMatchScene] My army length: 2
+PVPMatchScene.js?v=1772521616186:96 [PVPMatchScene] Have opponent army?: true
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+PVPMatchScene.js?v=1772521616186:114 [PVPMatchScene] Received opponent army, stopping retry
+PVPMatchScene.js?v=1772521616186:165 [PVPMatchScene] _tryStartBattle called
+PVPMatchScene.js?v=1772521616186:166 [PVPMatchScene] battleStarted: true
+PVPMatchScene.js?v=1772521616186:167 [PVPMatchScene] isConnected: true
+PVPMatchScene.js?v=1772521616186:168 [PVPMatchScene] opponentArmy: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:171 [PVPMatchScene] Battle already started, returning
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate
+WebRTCAdapter.js:356 [WebRTCAdapter] onmessage received: {"type":"army","army":[{"type":"ROGUE","x":8,"y":1},{"type":"ROGUE","x":8,"y":6}]}
+WebRTCAdapter.js:359 [WebRTCAdapter] Parsed message type: army
+PVPManager.js?v=1772521616526:141 [PVPManager] Received message: army {type: 'army', army: Array(2)}
+PVPManager.js?v=1772521616526:145 [PVPManager] Army received, length: 2
+PVPManager.js?v=1772521616526:149 [PVPManager] Calling onOpponentArmyReceived callback
+PVPMatchScene.js?v=1772521616186:151 [PVPMatchScene] Received opponent army: (2) [{…}, {…}]
+PVPMatchScene.js?v=1772521616186:156 [PVPMatchScene] Already have opponent army, ignoring duplicate

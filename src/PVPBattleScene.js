@@ -48,6 +48,11 @@ export class PVPBattleScene extends Phaser.Scene {
     }
 
     create() {
+        console.log('[PVPBattleScene] ==== CREATED ====');
+        console.log('[PVPBattleScene] Player:', this.playerNumber, 'isHost:', this.playerNumber === 1);
+        console.log('[PVPBattleScene] My army:', this.myArmy?.length, 'units');
+        console.log('[PVPBattleScene] Opponent army:', this.opponentArmy?.length, 'units');
+        
         window.gameScene = this;
         
         // Init systems
