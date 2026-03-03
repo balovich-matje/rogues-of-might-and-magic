@@ -223,6 +223,8 @@ export class PVPMatchScene extends Phaser.Scene {
         console.log('[PVPMatchScene] About to start PVPBattleScene (deferred)');
         setTimeout(() => {
             console.log('[PVPMatchScene] Executing deferred scene transition');
+            // Hide UI again just in case
+            this._hideWaitingUI();
             try {
                 this.scene.start('PVPBattleScene', {
                     pvpManager: this.pvpManager,
@@ -243,8 +245,12 @@ export class PVPMatchScene extends Phaser.Scene {
     // ============================================
 
     _showWaitingUI() {
+        console.log('[PVPMatchScene] _showWaitingUI called');
         const existing = document.getElementById('pvp-waiting-overlay');
-        if (existing) existing.remove();
+        if (existing) {
+            console.log('[PVPMatchScene] Removing existing waiting overlay');
+            existing.remove();
+        }
         
         const div = document.createElement('div');
         div.id = 'pvp-waiting-overlay';
@@ -291,8 +297,19 @@ export class PVPMatchScene extends Phaser.Scene {
     }
 
     _hideWaitingUI() {
+        console.log('[PVPMatchScene] _hideWaitingUI called');
         const div = document.getElementById('pvp-waiting-overlay');
-        if (div) div.remove();
+        console.log('[PVPMatchScene] Found waiting overlay:', !!div);
+        if (div) {
+            div.remove();
+            console.log('[PVPMatchScene] Waiting overlay removed');
+        } else {
+            console.log('[PVPMatchScene] Waiting overlay not found!');
+            // Try to find any element with similar ID
+            const allDivs = document.querySelectorAll('[id*="waiting"]');
+            console.log('[PVPMatchScene] Found', allDivs.length, 'waiting-related elements');
+            allDivs.forEach((el, i) => console.log('[PVPMatchScene] Element', i, ':', el.id));
+        }
     }
 
     // ============================================
