@@ -408,9 +408,9 @@ export class BattleScene extends Phaser.Scene {
         this.unitManager.updateUnitPosition(unit, newX, newY);
         unit.hasMoved = true;
         
-        // Recalculate valid moves
+        // After moving, update highlights based on remaining actions
         if (this.selectedUnit === unit) {
-            this.gridSystem.highlightValidMoves(unit);
+            this._updateActionHighlights(unit);
         }
     }
     
@@ -490,7 +490,12 @@ export class BattleScene extends Phaser.Scene {
         });
 
         if (!isSecondStrike) {
-            this.gridSystem.clearHighlights();
+            // After attack, update highlights or auto-end turn
+            this.time.delayedCall(500, () => {
+                if (attacker === this.turnSystem.currentUnit && attacker.isPlayer) {
+                    this._updateActionHighlights(attacker);
+                }
+            });
         }
     }
 
@@ -585,6 +590,47 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.gridSystem.clearHighlights();
+        
+        // After ranged attack, update highlights or auto-end turn
+        this.time.delayedCall(500, () => {
+            if (attacker === this.turnSystem.currentUnit && attacker.isPlayer) {
+                this._updateActionHighlights(attacker);
+            }
+        });
+    }
+
+    /**
+     * Update highlights based on remaining actions
+     * Shows move range if can move, attack range if can attack
+     * Auto-ends turn if no actions remain
+     */
+    _updateActionHighlights(unit) {
+        // Check if unit has any actions remaining
+        const canMove = unit.canMove();
+        const canAttack = unit.canAttack();
+        
+        if (!canMove && !canAttack) {
+            // No actions left - auto end turn
+            console.log(`[Auto Turn] ${unit.name} has no actions left, ending turn`);
+            this.time.delayedCall(800, () => {
+                if (this.turnSystem.currentUnit === unit) {
+                    this.endTurn();
+                }
+            });
+            return;
+        }
+        
+        // Clear previous highlights
+        this.gridSystem.clearHighlights();
+        
+        // Show appropriate highlights based on remaining actions
+        if (canMove) {
+            // Show move range
+            this.gridSystem.highlightValidMoves(unit);
+        } else if (canAttack) {
+            // Can't move but can attack - show attack range
+            this.gridSystem.highlightRangedAttackRange(unit);
+        }
     }
 
     performRicochetAttack(attacker, mainTarget) {
