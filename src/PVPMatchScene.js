@@ -55,11 +55,6 @@ export class PVPMatchScene extends Phaser.Scene {
     // ============================================
 
     _onConnected() {
-
-        
-        // Send our army
-        this.pvpManager.sendArmy(this.myArmy);
-        
         // Update UI
         const statusEl = document.getElementById('pvp-connection-status');
         if (statusEl) {
@@ -67,12 +62,42 @@ export class PVPMatchScene extends Phaser.Scene {
             statusEl.style.color = '#4CAF50';
         }
         
-        // Check if we can start
-        this._tryStartBattle();
+        // Start the army exchange handshake
+        this._startArmyExchange();
+    }
+
+    _startArmyExchange() {
+        // Send army and retry until we receive opponent's army
+        const sendArmyInterval = setInterval(() => {
+            if (!this.pvpManager.isConnected) {
+                clearInterval(sendArmyInterval);
+                return;
+            }
+            
+            if (this.opponentArmy) {
+                clearInterval(sendArmyInterval);
+                this._tryStartBattle();
+                return;
+            }
+            
+            // Send our army
+            this.pvpManager.sendArmy(this.myArmy);
+        }, 500); // Retry every 500ms
+        
+        // Stop retrying after 10 seconds (20 attempts)
+        setTimeout(() => {
+            clearInterval(sendArmyInterval);
+            if (!this.opponentArmy) {
+                const statusEl = document.getElementById('pvp-connection-status');
+                if (statusEl) {
+                    statusEl.textContent = '✗ Failed to exchange armies';
+                    statusEl.style.color = '#f44336';
+                }
+            }
+        }, 10000);
     }
 
     _onDisconnected() {
-
         const statusEl = document.getElementById('pvp-connection-status');
         if (statusEl) {
             statusEl.textContent = '✗ Disconnected';
@@ -81,9 +106,10 @@ export class PVPMatchScene extends Phaser.Scene {
     }
 
     _onOpponentArmy(army) {
-
-        this.opponentArmy = army;
-        this._tryStartBattle();
+        if (!this.opponentArmy) {
+            this.opponentArmy = army;
+            this._tryStartBattle();
+        }
     }
 
     // ============================================
