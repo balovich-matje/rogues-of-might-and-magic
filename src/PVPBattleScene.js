@@ -135,13 +135,21 @@ export class PVPBattleScene extends Phaser.Scene {
         if (unit.sprite) {
             // Remove any existing listeners and add our own
             unit.sprite.removeAllListeners('pointerdown');
+            unit.sprite.removeAllListeners('pointerover');
             unit.sprite.setInteractive();
             unit.sprite.on('pointerdown', () => this._onUnitClick(unit));
+            // Show stats on hover
+            unit.sprite.on('pointerover', () => this._onUnitHover(unit));
         }
         
         this.units.push(unit);
         this.unitPositions.set(`${x},${y}`, unit);
         return unit;
+    }
+    
+    _onUnitHover(unit) {
+        // Show unit stats on hover - stats persist until another unit is hovered
+        this.uiManager.updateUnitInfo(unit);
     }
 
     _getUnitAt(x, y) {
