@@ -1757,12 +1757,12 @@ export class PreGameScene extends Phaser.Scene {
         super({ key: 'PreGameScene' });
         this.totalPoints = 1000;
         this.remainingPoints = 1000;
-        this.unitCounts = { KNIGHT: 0, ARCHER: 0, WIZARD: 0, CLERIC: 0, ROGUE: 0, PALADIN: 0, RANGER: 0, BERSERKER: 0, SORCERER: 0 };
+        this.unitCounts = {};
         this.placedUnits = [];
         this.placementMode = false;
-        this.unitsToPlace = [];
+        this.selectedPlacementUnit = null;
 
-        // PVP mode
+        // PVP context
         this.isPVPMode = false;
         this.pvpManager = null;
     }
@@ -1772,6 +1772,7 @@ export class PreGameScene extends Phaser.Scene {
     }
 
     create() {
+        this.resetUnitCounts();
         this.showArmySelection();
         this.gridGraphics = this.add.graphics();
         this.drawGrid();
@@ -1820,6 +1821,10 @@ export class PreGameScene extends Phaser.Scene {
         this.updatePointsDisplay();
     }
 
+    resetUnitCounts() {
+        this.unitCounts = { KNIGHT: 0, ARCHER: 0, WIZARD: 0, CLERIC: 0, ROGUE: 0, PALADIN: 0, RANGER: 0, BERSERKER: 0, SORCERER: 0 };
+    }
+
     updatePointsDisplay() {
         document.getElementById('points-remaining').textContent = this.remainingPoints;
 
@@ -1845,29 +1850,44 @@ export class PreGameScene extends Phaser.Scene {
 
     confirmArmySelection() {
         document.getElementById('pregame-screen').classList.add('hidden');
-
-        this.unitsToPlace = [];
-        for (const [type, count] of Object.entries(this.unitCounts)) {
-            for (let i = 0; i < count; i++) {
-                this.unitsToPlace.push(type);
-            }
-        }
-
         this.startPlacementPhase();
     }
 
     startPlacementPhase() {
         this.placementMode = true;
         this.placedUnits = [];
+        this.selectedPlacementUnit = null;
 
-        // Placement columns (host=left 0-1, guest=right 8-9)
+        // Determine placement zone
         let placementStartX = 0;
         let placementEndX = 2;
+        let initialPlacementX = 0;
 
-        if (this.isPVPMode && this.pvpManager) {
-            if (!this.pvpManager.isHostPlayer()) {
-                placementStartX = CONFIG.GRID_WIDTH - 2;
-                placementEndX = CONFIG.GRID_WIDTH;
+        if (this.isPVPMode && this.pvpManager && !this.pvpManager.isHostPlayer()) {
+            placementStartX = CONFIG.GRID_WIDTH - 2;
+            placementEndX = CONFIG.GRID_WIDTH;
+            initialPlacementX = CONFIG.GRID_WIDTH - 1;
+        }
+
+        // Auto-place units
+        for (const [type, count] of Object.entries(this.unitCounts)) {
+            for (let i = 0; i < count; i++) {
+                // Find first available Y in the initial column
+                let spawnY = -1;
+                for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+                    const isOccupied = this.placedUnits.some(u => u.x === initialPlacementX && u.y === y);
+                    if (!isOccupied) {
+                        spawnY = y;
+                        break;
+                    }
+                }
+
+                if (spawnY !== -1) {
+                    const x = initialPlacementX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+                    const y = spawnY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+                    const sprite = this.add.text(x, y, UNIT_TYPES[type].emoji, { fontSize: '36px' }).setOrigin(0.5);
+                    this.placedUnits.push({ type, x: initialPlacementX, y: spawnY, sprite });
+                }
             }
         }
 
@@ -1876,53 +1896,63 @@ export class PreGameScene extends Phaser.Scene {
 
         // Update placement hint
         const hintText = placementBar.querySelector('.placement-hint');
-        if (hintText && this.isPVPMode) {
-            const side = this.pvpManager?.isHostPlayer() ? 'LEFT' : 'RIGHT';
-            hintText.textContent = `Click on the ${side} 2 columns to place units`;
-        }
-
-        this.updatePlacementDisplay();
+        const sideText = (this.isPVPMode && this.pvpManager?.isHostPlayer() === false) ? 'RIGHT' : 'LEFT';
+        hintText.textContent = `Click a unit to move it within the ${sideText} 2 columns.`;
+        document.getElementById('confirm-placement').disabled = false;
 
         this.input.on('pointerdown', (pointer) => {
-            // Check if spellbook modal is open - if so, don't process game clicks
-            const spellbookModal = document.getElementById('spellbook-modal');
-            if (spellbookModal && !spellbookModal.classList.contains('hidden')) {
-                return;
-            }
-            if (!this.placementMode || this.unitsToPlace.length === 0) return;
+            if (!this.placementMode) return;
 
             const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
             const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
 
-            // Use dynamic placement range based on side
-            if (gridX >= placementStartX && gridX < placementEndX &&
-                gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
+            const inPlacementZone = gridX >= placementStartX && gridX < placementEndX;
+            if (!inPlacementZone) {
+                if (this.selectedPlacementUnit) {
+                    this.selectedPlacementUnit.sprite.setAlpha(1.0);
+                    this.selectedPlacementUnit = null;
+                    this.drawGrid();
+                }
+                return;
+            }
+
+            if (this.selectedPlacementUnit) {
+                // Try to place the selected unit
                 const isOccupied = this.placedUnits.some(u => u.x === gridX && u.y === gridY);
-
                 if (!isOccupied) {
-                    const unitType = this.unitsToPlace.shift();
-                    this.placedUnits.push({ type: unitType, x: gridX, y: gridY });
-
-                    const x = gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-                    const y = gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-
-                    const text = this.add.text(x, y, UNIT_TYPES[unitType].emoji, {
-                        fontSize: '36px'
-                    }).setOrigin(0.5);
-
-                    this.updatePlacementDisplay();
+                    // Move the unit
+                    this.selectedPlacementUnit.x = gridX;
+                    this.selectedPlacementUnit.y = gridY;
+                    this.selectedPlacementUnit.sprite.setPosition(
+                        gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+                        gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2
+                    );
+                    this.selectedPlacementUnit.sprite.setAlpha(1.0);
+                    this.selectedPlacementUnit = null;
+                    this.drawGrid();
+                } else {
+                    // Clicked on another unit, just cancel selection for now
+                    this.selectedPlacementUnit.sprite.setAlpha(1.0);
+                    this.selectedPlacementUnit = null;
+                    this.drawGrid();
+                }
+            } else {
+                // Try to select a unit
+                const unitToSelect = this.placedUnits.find(u => u.x === gridX && u.y === gridY);
+                if (unitToSelect) {
+                    this.selectedPlacementUnit = unitToSelect;
+                    this.selectedPlacementUnit.sprite.setAlpha(0.5);
                 }
             }
         });
 
         this.input.on('pointermove', (pointer) => {
-            if (!this.placementMode) return;
+            if (!this.placementMode || !this.selectedPlacementUnit) return;
             this.drawGrid();
 
             const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
             const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
 
-            // Use dynamic placement range based on side
             if (gridX >= placementStartX && gridX < placementEndX &&
                 gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
                 const isOccupied = this.placedUnits.some(u => u.x === gridX && u.y === gridY);
@@ -1938,34 +1968,25 @@ export class PreGameScene extends Phaser.Scene {
         });
     }
 
-    updatePlacementDisplay() {
-        const remaining = this.unitsToPlace.length;
-        const currentUnit = remaining > 0 ? UNIT_TYPES[this.unitsToPlace[0]].name : 'Done';
-        const currentEmoji = remaining > 0 ? UNIT_TYPES[this.unitsToPlace[0]].emoji : '✓';
-
-        document.getElementById('current-placement-unit').textContent = `${currentEmoji} ${currentUnit}`;
-        document.getElementById('placement-remaining').textContent = remaining;
-        document.getElementById('confirm-placement').disabled = remaining > 0;
-    }
-
     confirmPlacement() {
         this.placementMode = false;
         document.getElementById('placement-bar').classList.add('hidden');
 
-        console.log('[PreGameScene] confirmPlacement called, placedUnits:', this.placedUnits);
-        console.log('[PreGameScene] isPVPMode:', this.isPVPMode, 'pvpManager:', !!this.pvpManager);
+        // Clean up sprites before passing data to next scene
+        const finalPlacement = this.placedUnits.map(u => ({ type: u.type, x: u.x, y: u.y }));
+        this.placedUnits.forEach(u => u.sprite.destroy());
+        this.placedUnits = [];
 
         if (this.isPVPMode && this.pvpManager) {
-            console.log('[PreGameScene] Starting PVPMatchScene with army:', this.placedUnits);
             this.scene.start('PVPMatchScene', {
                 pvpManager: this.pvpManager,
                 sessionKey: this.pvpManager.getSessionKey(),
                 playerNumber: this.pvpManager.getPlayerNumber(),
-                army: this.placedUnits
+                army: finalPlacement
             });
         } else {
             this.scene.start('BattleScene', {
-                placedUnits: this.placedUnits,
+                placedUnits: finalPlacement,
                 battleNumber: 1
             });
         }
@@ -1988,8 +2009,8 @@ export class PreGameScene extends Phaser.Scene {
         this.remainingPoints = this.totalPoints;
 
         // Reset unit counts when switching modes
-        this.unitCounts = { KNIGHT: 0, ARCHER: 0, WIZARD: 0, CLERIC: 0, ROGUE: 0, PALADIN: 0, RANGER: 0, BERSERKER: 0, SORCERER: 0 };
-        this.placedUnits = [];
+        this.resetUnitCounts();
+        this.placedUnits = []; // Should already be empty but just in case
 
         // Update UI
         document.getElementById('points-remaining').textContent = this.remainingPoints;
@@ -2044,7 +2065,6 @@ export class PreGameScene extends Phaser.Scene {
             // If manual signaling, the callback will handle the UI
 
         } catch (error) {
-            console.error('Failed to create session:', error);
             alert('Failed to create session: ' + error.message);
         }
     }
@@ -2256,7 +2276,6 @@ export class PreGameScene extends Phaser.Scene {
             // If manual signaling, the callback will show the answer code UI
 
         } catch (error) {
-            console.error('Failed to join session:', error);
             alert(error.message || 'Failed to join session. Check the key and try again.');
         }
     }

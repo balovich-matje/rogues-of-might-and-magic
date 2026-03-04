@@ -27,13 +27,13 @@
 
     <!-- Placement Bar (shown during placement phase, above UI panel) -->
     <div id="placement-bar" class="hidden">
-        <div class="placement-title">📍 Unit Placement</div>
-        <div class="placement-hint">Click left 2 columns to place units</div>
+        <div class="placement-title">📍 Army Placement</div>
+        <div class="placement-hint">Click a unit to move it. Click 'Start Battle' when ready.</div>
         <div class="action-divider"></div>
         <div id="placement-info">
-            <span id="current-placement-unit">-</span> (<span id="placement-remaining">0</span> left)
+            <span id="current-placement-unit">Reposition your army</span>
         </div>
-        <button id="confirm-placement" class="spell-button" onclick="gameScene.confirmPlacement()" disabled>
+        <button id="confirm-placement" class="spell-button" onclick="gameScene.confirmPlacement()">
             Start Battle
         </button>
     </div>
