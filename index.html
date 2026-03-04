@@ -40,26 +40,23 @@
     <!-- UI Panel -->
     <div id="ui-panel">
         <div class="action-section">
+            <strong style="color: #A68966;">Hero:</strong>
+            <div class="mana-display" id="mana-display">
+                💧 Mana: <span id="mana-current">100</span>/<span id="mana-max">100</span>
+            </div>
+            <button id="spellbook-btn" class="spell-button" onclick="gameScene.openSpellBook()">
+                📖 <span style="color: #FFD700;">S</span>pell Book
+            </button>
+        </div>
+        <div class="action-divider"></div>
+        <div class="action-section">
             <strong style="color: #A68966;">Unit:</strong>
             <button id="unit-ability-btn" class="spell-button" onclick="gameScene.useUnitAbility()" disabled
                 style="filter: grayscale(100%); opacity: 0.5; background: #3c3c3c; border-color: #555; color: #888;">
-                ⭐ <span id="unit-ability-name">(U)nique ability</span>
+                ⭐ <span id="unit-ability-name"><span style="color: #FFD700;">U</span>nique ability</span>
             </button>
-        </div>
-        <div class="mana-display" id="mana-display">
-            💧 Mana: <span id="mana-current">100</span>/<span id="mana-max">100</span>
-        </div>
-        <div class="action-divider"></div>
-        <div class="action-section">
-            <strong style="color: #A68966;">Hero:</strong>
-            <button id="spellbook-btn" class="spell-button" onclick="gameScene.openSpellBook()">
-                📖 (S)pell Book
-            </button>
-        </div>
-        <div class="action-divider"></div>
-        <div class="action-section">
             <button class="spell-button" onclick="gameScene.endTurn()">
-                ⏹️ (E)nd Turn
+                ⏹️ <span style="color: #FFD700;">E</span>nd Turn
             </button>
         </div>
     </div>

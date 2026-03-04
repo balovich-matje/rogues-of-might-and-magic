@@ -97,7 +97,7 @@ export class UIManager {
                 }
             }
 
-            abilityNameSpan.textContent = '(U)nique ability';
+            abilityNameSpan.innerHTML = '<span style="color: #FFD700;">U</span>nique ability';
 
             if (canUseAbility) {
                 abilityBtn.disabled = false;
