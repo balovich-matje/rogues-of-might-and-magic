@@ -199,17 +199,29 @@ export class Unit {
         }
 
         if (this.sprite) {
+            // Adjust origin to center so it rotates in-place instead of swinging out of the cell
+            if (this.sprite.setOrigin) {
+                const hOffset = this.sprite.displayHeight ? this.sprite.displayHeight / 2 : 32;
+                this.sprite.setOrigin(0.5, 0.5);
+                this.sprite.y -= hOffset;
+            }
+
+            // Fall backwards depending on side
+            const fallAngle = this.isPlayer ? -90 : 90;
+
             if (scene) {
                 // Add a falling animation (rotate 90 degrees)
                 scene.tweens.add({
                     targets: this.sprite,
-                    angle: 90,
+                    angle: fallAngle,
+                    y: '+=20', // drop slightly to lie on the floor
                     alpha: 0.5,
                     duration: 500,
                     ease: 'Power2'
                 });
             } else {
-                this.sprite.setAngle(90);
+                this.sprite.setAngle(fallAngle);
+                this.sprite.y += 20;
                 this.sprite.setAlpha(0.5);
             }
 
