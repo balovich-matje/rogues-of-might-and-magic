@@ -570,3 +570,26 @@ h1 {
     animation: specialist-glow 2s ease-in-out infinite;
     border-color: #9B6BAB !important;
 }
+
+/* Mythic glow animation (glowing red for mythic upgrades) */
+@keyframes mythic-glow {
+    0%, 100% {
+        box-shadow: 0 0 4px #e50000, 0 0 8px rgba(229, 0, 0, 0.5), inset 0 0 5px rgba(229, 0, 0, 0.3);
+        border-color: #cc0000;
+    }
+    50% {
+        box-shadow: 0 0 8px #ff1a1a, 0 0 12px rgba(255, 26, 26, 0.8), inset 0 0 8px rgba(255, 26, 26, 0.5);
+        border-color: #ff3333;
+    }
+}
+
+.mythic-card {
+    animation: mythic-glow 2s ease-in-out infinite;
+    border: 2px solid #e50000 !important;
+    background: linear-gradient(135deg, #2D1A1A 0%, #3D0000 100%) !important;
+}
+
+.mythic-card:hover {
+    animation: mythic-glow 1s ease-in-out infinite;
+    border-color: #ff1a1a !important;
+}

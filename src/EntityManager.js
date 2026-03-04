@@ -117,14 +117,17 @@ export class Unit {
 
         // Apply Knight/Paladin ranged damage reduction
         if (isRanged && (this.type === 'KNIGHT' || this.type === 'PALADIN')) {
-            const template = UNIT_TYPES[this.type];
-            if (template.passive) {
-                // Handle both formats: effect/value and effects/values array
-                if (template.passive.effect === 'rangedDefense') {
-                    amount = Math.floor(amount * (1 - template.passive.value));
-                } else if (template.passive.effects && template.passive.effects.includes('rangedDefense')) {
-                    const idx = template.passive.effects.indexOf('rangedDefense');
-                    amount = Math.floor(amount * (1 - template.passive.values[idx]));
+            // Divine Retribution removes the ranged defense and healing boost passives
+            if (!this.hasDivineRetribution) {
+                const template = UNIT_TYPES[this.type];
+                if (template.passive) {
+                    // Handle both formats: effect/value and effects/values array
+                    if (template.passive.effect === 'rangedDefense') {
+                        amount = Math.floor(amount * (1 - template.passive.value));
+                    } else if (template.passive.effects && template.passive.effects.includes('rangedDefense')) {
+                        const idx = template.passive.effects.indexOf('rangedDefense');
+                        amount = Math.floor(amount * (1 - template.passive.values[idx]));
+                    }
                 }
             }
         }

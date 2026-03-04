@@ -188,7 +188,7 @@ export class UIManager {
     // Create reward card HTML element
     createRewardCard(category, id, innerHTML, effectData = null, rarity = 'common') {
         const card = document.createElement('div');
-        card.className = rarity === 'legendary' ? 'reward-card legendary-card' : rarity === 'epic' ? 'reward-card specialist-card' : 'reward-card';
+        card.className = rarity === 'legendary' ? 'reward-card legendary-card' : rarity === 'epic' ? 'reward-card specialist-card' : rarity === 'mythic' ? 'reward-card mythic-card' : 'reward-card';
         card.dataset.category = category;
         card.dataset.id = id;
 
@@ -218,6 +218,19 @@ export class UIManager {
                 color: #E3D5B8;
                 background: linear-gradient(135deg, #2D241E 0%, #302438 100%);
             `;
+        } else if (rarity === 'mythic') {
+            // Mythic styling with red aura
+            card.style.cssText = `
+                border: 2px solid #e50000;
+                border-radius: 4px;
+                padding: 15px;
+                min-width: 150px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.15s;
+                color: #E3D5B8;
+                background: linear-gradient(135deg, #2D1A1A 0%, #3D0000 100%);
+            `;
         } else {
             card.style.cssText = `
                 background: #2D241E;
@@ -241,6 +254,8 @@ export class UIManager {
                 card.style.background = 'linear-gradient(135deg, #3D342E 0%, #4D3820 100%)';
             } else if (rarity === 'epic') {
                 card.style.background = 'linear-gradient(135deg, #3D342E 0%, #4D3840 100%)';
+            } else if (rarity === 'mythic') {
+                card.style.background = 'linear-gradient(135deg, #3D2A2A 0%, #5D0000 100%)';
             } else {
                 card.style.background = '#3D342E';
                 card.style.borderColor = '#B69976';
@@ -252,6 +267,8 @@ export class UIManager {
                 card.style.background = 'linear-gradient(135deg, #2D241E 0%, #3D2814 100%)';
             } else if (rarity === 'epic') {
                 card.style.background = 'linear-gradient(135deg, #2D241E 0%, #302438 100%)';
+            } else if (rarity === 'mythic') {
+                card.style.background = 'linear-gradient(135deg, #2D1A1A 0%, #3D0000 100%)';
             } else {
                 card.style.background = '#2D241E';
                 card.style.borderColor = '#A68966';

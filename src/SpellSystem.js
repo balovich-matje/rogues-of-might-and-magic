@@ -115,13 +115,32 @@ export class SpellSystem {
             multiplier += sorcererCount * 0.5;
         }
 
+        // Check for Sorcerer Arcane Focus mythic perk
+        const hasArcaneFocus = playerUnits.some(u => u.type === 'SORCERER' && u.hasArcaneFocus);
+        if (hasArcaneFocus && this.scene.arcaneFocusSpell === this.activeSpell) {
+            multiplier += (this.scene.arcaneFocusStacks || 0) * 0.5;
+            // The max stacks can be whatever we want, or infinite, but here we add the 50% for every consecutive cast.
+        }
+
         return Math.floor(basePower * multiplier);
+    }
+
+    updateArcaneFocus() {
+        // If they cast the same spell, increment stack
+        if (this.scene.arcaneFocusSpell === this.activeSpell) {
+            this.scene.arcaneFocusStacks = (this.scene.arcaneFocusStacks || 0) + 1;
+        } else {
+            // Otherwise reset combo
+            this.scene.arcaneFocusSpell = this.activeSpell;
+            this.scene.arcaneFocusStacks = 1; // 1 means they cast it once successfully gaining 1 stack for next time
+        }
     }
 
     executeTileSpell(spell, centerX, centerY) {
         const actualCost = Math.floor(spell.manaCost * (this.scene.manaCostMultiplier || 1));
         this.scene.spendMana(actualCost);
         this.scene.spellsCastThisRound++;
+        this.updateArcaneFocus();
 
         switch (spell.effect) {
             case 'aoeDamage':
@@ -142,6 +161,7 @@ export class SpellSystem {
         const actualCost = Math.floor(spell.manaCost * (this.scene.manaCostMultiplier || 1));
         this.scene.spendMana(actualCost);
         this.scene.spellsCastThisRound++;
+        this.updateArcaneFocus();
 
         // If armyBuffs is enabled and this is a buff spell, apply to whole army
         const isBuffSpell = ['haste', 'shield', 'bless', 'regenerate', 'heal'].includes(spell.effect);
@@ -275,6 +295,10 @@ export class SpellSystem {
         if (clericCount > 0) {
             healAmount = Math.floor(healAmount * (1 + clericCount * 0.5));
         }
+
+        // Apply global healing multiplier from spell buffs
+        const healingMult = this.scene.healingPowerMultiplier || 1;
+        healAmount = Math.floor(healAmount * healingMult);
 
         unit.heal(healAmount);
         this.createHealEffect(unit);
