@@ -1,4 +1,4 @@
-# ⚔️ Steel and Sigils v0.48
+# ⚔️ Steel and Sigils v0.49
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
