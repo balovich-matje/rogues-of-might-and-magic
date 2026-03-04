@@ -199,23 +199,23 @@ export class Unit {
         }
 
         if (this.sprite) {
-            if (this.sprite.setText) {
-                // Text sprite (emoji mode)
-                this.sprite.setText('💀');
-                this.sprite.setAlpha(0.5);
+            if (scene) {
+                // Add a falling animation (rotate 90 degrees)
+                scene.tweens.add({
+                    targets: this.sprite,
+                    angle: 90,
+                    alpha: 0.5,
+                    duration: 500,
+                    ease: 'Power2'
+                });
             } else {
-                // Image sprite - fade and add skull overlay
-                this.sprite.setAlpha(0.3);
-                this.sprite.setTint(0x666666);
-                if (scene) {
-                    scene.add.text(
-                        this.sprite.x, this.sprite.y,
-                        '💀',
-                        { fontSize: '32px', align: 'center' }
-                    ).setOrigin(0.5).setAlpha(0.7);
-                }
+                this.sprite.setAngle(90);
+                this.sprite.setAlpha(0.5);
             }
-            this.sprite.setAngle(0);
+
+            if (!this.sprite.setText) {
+                this.sprite.setTint(0x666666);
+            }
             this.sprite.removeInteractive();
         }
 
