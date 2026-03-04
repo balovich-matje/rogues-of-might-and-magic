@@ -750,17 +750,22 @@ export class BattleScene extends Phaser.Scene {
             duration: 100,
             yoyo: true,
             onComplete: () => {
-                target.takeDamage(damage, false, retaliator);
-                this.uiManager.showDamageText(target, damage);
                 this.uiManager.showBuffText(retaliator, 'RETRIBUTION!', '#ff3333');
 
-                this.tweens.add({
-                    targets: target.sprite,
-                    alpha: 0.3,
-                    duration: 50,
-                    yoyo: true,
-                    repeat: 2
-                });
+                if (retaliator.hasCleave) {
+                    this.performCleaveAttack(retaliator, target, damage);
+                } else {
+                    target.takeDamage(damage, false, retaliator);
+                    this.uiManager.showDamageText(target, damage);
+
+                    this.tweens.add({
+                        targets: target.sprite,
+                        alpha: 0.3,
+                        duration: 50,
+                        yoyo: true,
+                        repeat: 2
+                    });
+                }
 
                 if (this.selectedUnit === target) {
                     this.uiManager.updateUnitInfo(target);
@@ -1820,12 +1825,12 @@ export class BattleScene extends Phaser.Scene {
     }
 
     selectReward(category, id, cardElement, effectData) {
-        if (category === 'buff') {
+        if (category === 'buff' || category === 'epic') {
             this.showBuffTargetSelection(id, cardElement, effectData);
             return;
         }
 
-        if (category === 'legendary') {
+        if (category === 'legendary' || category === 'mythic') {
             this.showLegendaryTargetSelection(id, cardElement, effectData);
             return;
         }
@@ -1912,14 +1917,16 @@ export class BattleScene extends Phaser.Scene {
 
     showLegendaryTargetSelection(buffId, buffCard, buffData) {
         // Filter by unit type AND exclude units that already have this buff
-        const buffPropertyMap = {
-            'BERSERKER': 'hasDoubleStrike',
-            'PALADIN': 'hasCleave',
-            'RANGER': 'hasRicochet',
-            'WIZARD': 'hasPiercing',
-            'ROGUE': 'hasBackstab'
+        const buffIdToProperty = {
+            'legendary_frenzy': 'hasDoubleStrike',
+            'legendary_cleave': 'hasCleave',
+            'legendary_ricochet': 'hasRicochet',
+            'legendary_piercing': 'hasPiercing',
+            'legendary_backstab': 'hasBackstab',
+            'mythic_divine_retribution': 'hasDivineRetribution',
+            'mythic_arcane_focus': 'hasArcaneFocus'
         };
-        const buffProperty = buffPropertyMap[buffData.unitType];
+        const buffProperty = buffIdToProperty[buffId];
 
         const playerUnits = this.unitManager.getPlayerUnits().filter(u => {
             if (u.type !== buffData.unitType) return false;
@@ -1967,9 +1974,10 @@ export class BattleScene extends Phaser.Scene {
                 // Clear any existing buff/legendary selection
                 this.clearBuffSelection();
 
-                buffCard.style.borderColor = '#D4A574';
+                const isMythic = buffData.rarity === 'mythic';
+                buffCard.style.borderColor = isMythic ? '#ff3333' : '#D4A574';
                 buffCard.style.transform = 'scale(1.05)';
-                buffCard.style.boxShadow = '0 0 30px rgba(212, 165, 116, 0.5)';
+                buffCard.style.boxShadow = isMythic ? '0 0 30px rgba(255, 51, 51, 0.5)' : '0 0 30px rgba(212, 165, 116, 0.5)';
 
                 this.selectedRewards.legendary = { id: buffId, effectData: buffData, targetUnit: unit };
                 this.updateConfirmButton();
