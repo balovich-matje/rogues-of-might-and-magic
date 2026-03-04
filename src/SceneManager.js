@@ -1340,7 +1340,7 @@ export class BattleScene extends Phaser.Scene {
                 effect: () => { this.maxMana += 20; this.mana = this.maxMana; this.uiManager.updateManaDisplay(); }
             },
             {
-                id: 'double_cast', name: 'Twin Cast', icon: '🔄', desc: 'Cast 2 spells per round',
+                id: 'double_cast', name: 'Twin Cast', icon: '🔄', desc: '+1 spell per round',
                 buffType: 'spellsPerRound', buffValue: 1,
                 effect: () => { this.spellsPerRound = (this.spellsPerRound || 1) + 1; }
             },

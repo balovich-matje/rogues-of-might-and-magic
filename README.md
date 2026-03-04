@@ -1,4 +1,4 @@
-# ⚔️ Steel and Sigils v0.50
+# ⚔️ Steel and Sigils v0.51
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
@@ -82,7 +82,7 @@ Magic buffs can be acquired from victory rewards:
 | **Mana Flow** 🌊 | +2 mana regen per turn |
 | **Arcane Power** 🔮 | +20% spell damage |
 | **Efficient Casting** ⚡ | -20% mana cost |
-| **Twin Cast** 🔄 | Cast 2 spells per round |
+| **Twin Cast** 🔄 | +1 spell per round (stackable) |
 | **Expanded Mana Pool** 💧 | +30 max mana |
 
 *Note: Having both Eternal Magic and Mass Enchantment means one buff spell permanently buffs your entire army!*

@@ -17,7 +17,7 @@ export class SpellSystem {
         // Check spells per round limit
         if (this.scene.spellsCastThisRound >= this.scene.spellsPerRound) {
             this.scene.uiManager.showFloatingText(
-                `Can only cast ${this.scene.spellsPerRound} spell(s) per round!`, 
+                `Can only cast ${this.scene.spellsPerRound} spell(s) per round!`,
                 400, 300, '#ff4444'
             );
             return;
@@ -71,7 +71,7 @@ export class SpellSystem {
 
     executeSpellAt(gridX, gridY) {
         if (!this.activeSpell) return;
-        
+
         const spell = SPELLS[this.activeSpell];
         const unit = this.scene.unitManager.getUnitAt(gridX, gridY);
 
@@ -107,14 +107,14 @@ export class SpellSystem {
 
     getSpellDamage(basePower) {
         let multiplier = this.scene.spellPowerMultiplier || 1;
-        
+
         // Check for Sorcerer passive
         const playerUnits = this.scene.unitManager.getPlayerUnits();
         const sorcererCount = playerUnits.filter(u => u.type === 'SORCERER' && u.health > 0).length;
         if (sorcererCount > 0) {
             multiplier += sorcererCount * 0.5;
         }
-        
+
         return Math.floor(basePower * multiplier);
     }
 
@@ -258,7 +258,7 @@ export class SpellSystem {
 
     executeSingleDamage(spell, unit) {
         this.createLightningEffect(unit);
-        
+
         const damage = this.getSpellDamage(spell.power);
         this.scene.time.delayedCall(200, () => {
             unit.takeDamage(damage);
@@ -275,7 +275,7 @@ export class SpellSystem {
         if (clericCount > 0) {
             healAmount = Math.floor(healAmount * (1 + clericCount * 0.5));
         }
-        
+
         unit.heal(healAmount);
         this.createHealEffect(unit);
         this.scene.uiManager.showHealText(unit, healAmount);
@@ -311,23 +311,23 @@ export class SpellSystem {
         const actualCost = Math.floor(spell.manaCost * (this.scene.manaCostMultiplier || 1));
         this.scene.spendMana(actualCost);
         this.scene.spellsCastThisRound++;
-        
+
         this.createTeleportEffect(unit);
         this.scene.unitManager.updateUnitPosition(unit, newX, newY);
         this.scene.uiManager.showBuffText(unit, 'TELEPORT!', '#6B5B8B');
-        
+
         this.teleportUnit = null;
     }
 
     executeChainLightning(spell, initialTarget) {
         const targets = [initialTarget];
         const allEnemies = this.scene.unitManager.getEnemyUnits();
-        
+
         // Find nearby enemies to chain to
         for (const enemy of allEnemies) {
             if (targets.length >= spell.chains + 1) break;
             if (targets.includes(enemy)) continue;
-            
+
             for (const target of targets) {
                 const dist = Math.abs(enemy.gridX - target.gridX) + Math.abs(enemy.gridY - target.gridY);
                 if (dist <= 2) {
@@ -352,23 +352,19 @@ export class SpellSystem {
         this.activeSpell = null;
         this.teleportUnit = null;
         document.body.style.cursor = 'default';
-        
-        // Disable spellbook button after casting (until next turn)
-        const spellbookBtn = document.getElementById('spellbook-btn');
-        if (spellbookBtn) {
-            spellbookBtn.disabled = true;
-            spellbookBtn.style.opacity = '0.5';
-            spellbookBtn.style.cursor = 'not-allowed';
-        }
+
+        // Check if player can cast more spells this round and update button state
+        this.resetSpellButton();
     }
-    
+
     resetSpellButton() {
-        // Re-enable spellbook button at start of new turn
+        // Enable/disable spellbook button based on spells cast this round
         const spellbookBtn = document.getElementById('spellbook-btn');
         if (spellbookBtn) {
-            spellbookBtn.disabled = false;
-            spellbookBtn.style.opacity = '1';
-            spellbookBtn.style.cursor = 'pointer';
+            const canCast = this.scene.spellsCastThisRound < this.scene.spellsPerRound;
+            spellbookBtn.disabled = !canCast;
+            spellbookBtn.style.opacity = canCast ? '1' : '0.5';
+            spellbookBtn.style.cursor = canCast ? 'pointer' : 'not-allowed';
         }
     }
 
@@ -379,7 +375,7 @@ export class SpellSystem {
         const scale = radius === 2 ? 5 : 3;
 
         const explosion = this.scene.add.circle(x, y, 20, 0xff6600);
-        
+
         this.scene.tweens.add({
             targets: explosion,
             scale: scale,
@@ -427,7 +423,7 @@ export class SpellSystem {
             const crystal = this.scene.add.polygon(x, y, [0, -15, 10, 0, 0, 15, -10, 0], 0x87ceeb);
             crystal.setAlpha(0.7);
             const angle = (i / 6) * Math.PI * 2;
-            
+
             this.scene.tweens.add({
                 targets: crystal,
                 x: x + Math.cos(angle) * 40,
@@ -441,7 +437,7 @@ export class SpellSystem {
     }
 
     createLightningEffect(unit) {
-        const bolt = this.scene.add.text(unit.sprite.x, unit.sprite.y - 100, '⚡', { 
+        const bolt = this.scene.add.text(unit.sprite.x, unit.sprite.y - 100, '⚡', {
             fontSize: '60px',
             color: '#ffff00'
         }).setOrigin(0.5);
@@ -456,7 +452,7 @@ export class SpellSystem {
     }
 
     createHealEffect(unit) {
-        const heart = this.scene.add.text(unit.sprite.x, unit.sprite.y, '💚', { 
+        const heart = this.scene.add.text(unit.sprite.x, unit.sprite.y, '💚', {
             fontSize: '40px'
         }).setOrigin(0.5);
 
