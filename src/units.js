@@ -125,7 +125,7 @@ const UNIT_TYPES = {
         cost: 500,
         passive: {
             name: 'Blessed Touch',
-            description: '+50% healing done, ranged attacks (4 tiles)'
+            description: 'Can cast Heal once per turn. Army-wide +50% healing.'
         }
     },
     ROGUE: {

@@ -261,6 +261,8 @@ export class Unit {
     resetTurn() {
         this.hasMoved = false;
         this.hasAttacked = false;
+        this.hasHealed = false;
+        this.hasPulled = false;
 
         // Store starting position for Rogue's hit-and-run
         if (this.type === 'ROGUE' || this.type === 'ORC_ROGUE' || this.type === 'LOOT_GOBLIN') {

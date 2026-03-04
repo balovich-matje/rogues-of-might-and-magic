@@ -302,8 +302,13 @@ export class BattleScene extends Phaser.Scene {
 
         if (this.activeUnitAbility === 'HEAL') {
             if (target && target.isPlayer && !target.isDead) {
-                // Cleric Heal: restore 30 + 50% = 45 health roughly
-                const healAmount = Math.floor(target.maxHealth * 0.4);
+                // Cleric Heal: restore based on SPELLS.heal.power and passive bonuses
+                let healAmount = SPELLS.heal.power;
+                const playerUnits = this.unitManager.getPlayerUnits();
+                const clericCount = playerUnits.filter(u => (u.type === 'CLERIC' || u.type === 'PALADIN') && u.health > 0).length;
+                if (clericCount > 0) {
+                    healAmount = Math.floor(healAmount * (1 + clericCount * 0.5));
+                }
                 target.health = Math.min(target.maxHealth, target.health + healAmount);
                 target.updateHealthBar();
                 this.uiManager.showHealText(target, healAmount);
@@ -1039,7 +1044,7 @@ export class BattleScene extends Phaser.Scene {
                 // Assign hotkey if affordable and not already used on this page
                 if (canAfford && /^[A-Z]$/.test(hotkey) && !usedHotkeys.has(hotkey)) {
                     usedHotkeys.add(hotkey);
-                    displayName = `(${hotkey})${spell.name.substring(1)}`;
+                    displayName = `<span style="color: #FFD700;">${hotkey}</span>${spell.name.substring(1)}`;
 
                     // Register listener with a specific callback function
                     const spellKey = key; // Capture key for the closure
