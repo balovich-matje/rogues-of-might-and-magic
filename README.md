@@ -1,4 +1,4 @@
-# ⚔️ Steel and Sigils v0.52
+# ⚔️ Steel and Sigils v0.53
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
@@ -114,6 +114,14 @@ At the start of a PVE run, one of three enemy factions is randomly chosen. Enemi
 | 🤫 Cultist Neophyte | 35 | 15 | 3 | 9 | Ranged |
 | 🐙 Gibbering Horror | 80 | 40 | 3 | 11 | Ranged |
 | 🦎 Flesh-warped Stalker | 70 | 40 | 7 | 16 | Fast melee |
+
+#### Faction Bosses (Every 5th Wave)
+| Faction | Boss | HP | DMG | Special |
+|------|------|----|-----|---------|
+| Greenskin Horde | 👑 Ogre Chieftain | 500 | 80 | Regenerates, slows enemies |
+| Greenskin Horde | 🔮 Orc Shaman King | 350 | 40 | Casts AoE spells |
+| Dungeon Dwellers | 💀👑 Summoner Lich | 300 | 10 | Summons undead allies each turn |
+| Old God Worshippers | 🦑 Octo'th Hroa'rath | 250 | 75 | Pulls enemies into melee, AoE aura |
 
 ### PVE Progression
 

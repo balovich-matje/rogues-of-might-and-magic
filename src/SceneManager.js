@@ -61,9 +61,10 @@ export class BattleScene extends Phaser.Scene {
         const enemyUnits = ['ORC_WARRIOR', 'ORC_BRUTE', 'ORC_ROGUE', 'GOBLIN_STONE_THROWER',
             'OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN',
             // Dungeon Dwellers
-            'ANIMATED_ARMOR', 'SKELETON_ARCHER', 'SKELETON_SOLDIER', 'LOST_SPIRIT',
+            'ANIMATED_ARMOR', 'SKELETON_ARCHER', 'SKELETON_SOLDIER', 'LOST_SPIRIT', 'SUMMONER_LICH',
             // Old God Worshippers
-            'CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER'];
+            'CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER', "OCTOTH_HROARATH"
+        ];
         for (const unitType of enemyUnits) {
             const template = UNIT_TYPES[unitType];
             if (template && template.image) {
@@ -292,18 +293,20 @@ export class BattleScene extends Phaser.Scene {
     }
 
     createBossWave() {
-        // Boss wave: Spawn a single powerful boss
-        const bossTypes = ['OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN'];
-
-        // Loot Goblin has reduced spawn chance (30% chance if rolled, otherwise 50/50 between the other two)
         let selectedBoss;
-        const roll = Math.random();
-        if (roll < 0.3) {
-            selectedBoss = 'LOOT_GOBLIN';
-        } else if (roll < 0.65) {
-            selectedBoss = 'OGRE_CHIEFTAIN';
+        if (this.currentEnemyFaction === 'DUNGEON_DWELLERS') {
+            selectedBoss = 'SUMMONER_LICH';
+        } else if (this.currentEnemyFaction === 'OLD_GOD_WORSHIPPERS') {
+            selectedBoss = 'OCTOTH_HROARATH';
         } else {
-            selectedBoss = 'ORC_SHAMAN_KING';
+            // Default to Greenskin Horde bosses
+            const bossTypes = ['OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN'];
+            const roll = Math.random();
+            if (roll < 0.3) {
+                selectedBoss = 'LOOT_GOBLIN';
+            } else {
+                selectedBoss = roll < 0.65 ? 'OGRE_CHIEFTAIN' : 'ORC_SHAMAN_KING';
+            }
         }
 
         const availablePositions = this.getEnemySpawnPositions();

@@ -9,8 +9,8 @@
 - Initiative-based turn order system (HOMM5 style) for PVE
 - Alternating turns for PVP (Player 1 → Player 2)
 - 9 playable unit types with unique passives and stats
-- **3 Enemy Factions** (PVE only): Greenskin Horde, Dungeon Dwellers, Old God Worshippers
-- 12 total enemy unit types
+- **3 Enemy Factions** (PVE only) with unique bosses
+- 14 total enemy unit types
 - 12 different spells with various effects
 - Unit progression through victory rewards (PVE)
 - Legendary powers for elite units (rare drops)

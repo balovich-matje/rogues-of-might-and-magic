@@ -286,7 +286,7 @@ When adding new features, verify:
 - **Enemy scaling**: `statMultiplier = 1 + (battleNumber - 1) * 0.15`
 - **Point buy system**: 1000 points start (PVE), 2500 points (PVP)
 - **New unit waves**: Every 2 rounds
-- **Boss waves**: Every 5 rounds (Ogre Chieftain, Orc Shaman King, or Loot Goblin)
+- **Boss waves**: Every 5 rounds (faction-specific boss)
 - **PVP Side assignment**: Host = left (columns 0-1), Guest = right (columns 8-9)
 - **PVP Turn order**: Player 1 always starts
 ```

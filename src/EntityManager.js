@@ -65,6 +65,11 @@ export class Unit {
 
         // Berserker Bloodlust stacks (permanent damage increase from kills)
         this.bloodlustStacks = 0;
+
+        // Summoner Lich first turn summon
+        if (this.type === 'SUMMONER_LICH') {
+            this.firstSummon = true;
+        }
     }
 
     // Get all grid positions occupied by this unit (for 2x2 bosses)
@@ -249,6 +254,51 @@ export class Unit {
         if (this.type === 'ROGUE' || this.type === 'ORC_ROGUE' || this.type === 'LOOT_GOBLIN') {
             this.turnStartX = this.gridX;
             this.turnStartY = this.gridY;
+        }
+
+        // Summoner Lich: Summon units at start of turn
+        if (this.type === 'SUMMONER_LICH' && !this.isDead) {
+            const summonCount = this.firstSummon ? 2 : 1;
+            this.firstSummon = false;
+
+            this.scene.uiManager.showBuffText(this, 'SUMMON!', '#9B59B6');
+
+            const summonableUnits = ['SKELETON_ARCHER', 'SKELETON_SOLDIER', 'ANIMATED_ARMOR'];
+            const availablePositions = [];
+            // Find available adjacent spots
+            for (let y = this.gridY - 1; y <= this.gridY + this.bossSize; y++) {
+                for (let x = this.gridX - 1; x <= this.gridX + this.bossSize; x++) {
+                    if (x < 0 || x >= CONFIG.GRID_WIDTH || y < 0 || y >= CONFIG.GRID_HEIGHT) continue;
+                    if (this.scene.unitManager.isValidPlacement(x, y)) {
+                        availablePositions.push({ x, y });
+                    }
+                }
+            }
+
+            for (let i = 0; i < summonCount; i++) {
+                if (availablePositions.length === 0) break;
+
+                const unitType = summonableUnits[Math.floor(Math.random() * summonableUnits.length)];
+                const posIndex = Math.floor(Math.random() * availablePositions.length);
+                const pos = availablePositions.splice(posIndex, 1)[0];
+
+                this.scene.unitManager.addUnit(unitType, pos.x, pos.y);
+            }
+            // Update turn queue with new units
+            this.scene.turnSystem.updateQueue();
+        }
+
+        // Octo'th Hroa'rath: Otherworldly Aura
+        if (this.type === 'OCTOTH_HROARATH' && !this.isDead) {
+            this.scene.uiManager.showBuffText(this, 'AURA!', '#9B59B6');
+            const adjacentUnits = this.scene.unitManager.getPlayerUnits().filter(u => {
+                const dist = this.scene.turnSystem.getDistanceToUnit(this, u);
+                return dist === 1;
+            });
+            adjacentUnits.forEach(unit => {
+                unit.takeDamage(15, false, this);
+                this.scene.uiManager.showDamageText(unit, 15);
+            });
         }
 
         // Ogre Chieftain: Regenerate 10% max HP at start of turn
@@ -592,27 +642,34 @@ export class TurnSystem {
     }
 
     executeAITurn() {
-        console.log('[AI Turn] Starting AI turn for:', this.currentUnit?.name, 'Type:', this.currentUnit?.type);
-
         if (!this.currentUnit || this.currentUnit.isDead) {
-            console.log('[AI Turn] Unit is null or dead, skipping');
             this.nextTurn();
             return;
         }
 
         const unit = this.currentUnit;
         const playerUnits = this.scene.unitManager.getPlayerUnits();
-
-        console.log('[AI Turn] Player units found:', playerUnits.length);
-        console.log('[AI Turn] Unit stats - hasMoved:', unit.hasMoved, 'hasAttacked:', unit.hasAttacked, 'isPlayer:', unit.isPlayer);
-
         if (playerUnits.length === 0) return;
 
-        // Orc Shaman King: Try to cast spells first
+        // Handle special boss AI
         if (unit.type === 'ORC_SHAMAN_KING') {
             this.executeShamanKingTurn(playerUnits);
             return;
         }
+
+        if (unit.type === 'OCTOTH_HROARATH') {
+            this.executeOctothTurn(playerUnits);
+            return;
+        }
+
+        // Default AI for all other units
+        this.executeDefaultAITurn(playerUnits);
+    }
+
+    executeDefaultAITurn(playerUnits) {
+        const unit = this.currentUnit;
+
+        if (playerUnits.length === 0) return;
 
         // Find nearest player unit
         let nearest = null;
@@ -665,16 +722,13 @@ export class TurnSystem {
         }
 
         // Move towards player - use all available movement
-        console.log(`[AI Turn] ${unit.name} starting movement, range: ${unit.moveRange}, hasMoved: ${unit.hasMoved}`);
         let movesRemaining = unit.moveRange;
         let totalMoves = 0;
 
         while (movesRemaining > 0) {
             const currentDist = this.getDistanceToUnit(unit, nearest);
-            console.log(`[AI Movement] Distance to target: ${currentDist}, moves remaining: ${movesRemaining}`);
 
             if (currentDist === 1) {
-                console.log(`[AI Movement] Adjacent to target, stopping movement`);
                 break;
             }
 
@@ -687,21 +741,15 @@ export class TurnSystem {
             const xDist = Math.abs(nearest.gridX - unit.gridX);
             const yDist = Math.abs(nearest.gridY - unit.gridY);
 
-            console.log(`[AI Movement] Trying to move dx=${dx}, dy=${dy} (xDist=${xDist}, yDist=${yDist})`);
-
             if (xDist >= yDist && dx !== 0) {
                 // Try X first, then Y
                 const newX = unit.gridX + dx;
-                console.log(`[AI Movement] Trying X move to (${newX}, ${unit.gridY})`);
                 if (this.isValidMoveForUnit(unit, newX, unit.gridY)) {
-                    console.log(`[AI Movement] Moving X to (${newX}, ${unit.gridY})`);
                     this.scene.moveUnitAI(unit, newX, unit.gridY);
                     moved = true;
                 } else if (dy !== 0) {
                     const newY = unit.gridY + dy;
-                    console.log(`[AI Movement] Trying Y move to (${unit.gridX}, ${newY})`);
                     if (this.isValidMoveForUnit(unit, unit.gridX, newY)) {
-                        console.log(`[AI Movement] Moving Y to (${unit.gridX}, ${newY})`);
                         this.scene.moveUnitAI(unit, unit.gridX, newY);
                         moved = true;
                     }
@@ -709,16 +757,12 @@ export class TurnSystem {
             } else if (dy !== 0) {
                 // Try Y first, then X
                 const newY = unit.gridY + dy;
-                console.log(`[AI Movement] Trying Y move to (${unit.gridX}, ${newY})`);
                 if (this.isValidMoveForUnit(unit, unit.gridX, newY)) {
-                    console.log(`[AI Movement] Moving Y to (${unit.gridX}, ${newY})`);
                     this.scene.moveUnitAI(unit, unit.gridX, newY);
                     moved = true;
                 } else if (dx !== 0) {
                     const newX = unit.gridX + dx;
-                    console.log(`[AI Movement] Trying X move to (${newX}, ${unit.gridY})`);
                     if (this.isValidMoveForUnit(unit, newX, unit.gridY)) {
-                        console.log(`[AI Movement] Moving X to (${newX}, ${unit.gridY})`);
                         this.scene.moveUnitAI(unit, newX, unit.gridY);
                         moved = true;
                     }
@@ -750,18 +794,15 @@ export class TurnSystem {
             }
 
             if (!moved) {
-                console.log(`[AI Movement] Could not find valid move, stopping`);
                 break;
             }
 
             totalMoves++;
             movesRemaining--;
-            console.log(`[AI Movement] Successfully moved, total moves this turn: ${totalMoves}`);
         }
 
         // Mark unit as having moved after all movement is complete
         unit.hasMoved = true;
-        console.log(`[AI Turn] ${unit.name} finished movement, moved ${totalMoves} cells`);
 
         // Check if can attack after moving (melee or ranged)
         const finalDist = this.getDistanceToUnit(unit, nearest);
@@ -804,6 +845,69 @@ export class TurnSystem {
         this.scene.time.delayedCall(1200, () => this.nextTurn());
     }
 
+    executeOctothTurn(playerUnits) {
+        const unit = this.currentUnit;
+        const scene = this.scene;
+
+        // 1. Try to pull a unit
+        if (unit.canMove()) { // Use 'canMove' as a proxy for "hasn't done a major action"
+            const pullableTargets = playerUnits.filter(p => {
+                const dist = this.getDistanceToUnit(unit, p);
+                return dist > 1 && dist <= 4;
+            });
+
+            if (pullableTargets.length > 0) {
+                // Find nearest pullable target
+                const targetToPull = pullableTargets.sort((a, b) => this.getDistanceToUnit(unit, a) - this.getDistanceToUnit(unit, b))[0];
+
+                // Find an empty adjacent spot to pull the target to
+                let pullToPos = null;
+                const adjacentSpots = [];
+                for (let y = unit.gridY - 1; y <= unit.gridY + unit.bossSize; y++) {
+                    for (let x = unit.gridX - 1; x <= unit.gridX + unit.bossSize; x++) {
+                        if (this.isValidMoveForUnit(targetToPull, x, y)) {
+                            adjacentSpots.push({ x, y });
+                        }
+                    }
+                }
+
+                if (adjacentSpots.length > 0) {
+                    // Find the adjacent spot closest to the target's original position
+                    pullToPos = adjacentSpots.sort((a, b) =>
+                        (Math.abs(a.x - targetToPull.gridX) + Math.abs(a.y - targetToPull.gridY)) -
+                        (Math.abs(b.x - targetToPull.gridX) + Math.abs(b.y - targetToPull.gridY))
+                    )[0];
+                }
+
+                if (pullToPos) {
+                    unit.hasMoved = true; // The pull is the move action
+                    scene.uiManager.showBuffText(unit, 'PULL!', '#9B59B6');
+
+                    // Visual effect for pull
+                    const tendril = scene.add.line(0, 0, unit.sprite.x, unit.sprite.y, targetToPull.sprite.x, targetToPull.sprite.y, 0x9B59B6, 0.8).setOrigin(0);
+                    tendril.setLineWidth(4);
+                    scene.tweens.add({ targets: tendril, alpha: 0, duration: 500, onComplete: () => tendril.destroy() });
+
+                    // Move the unit
+                    scene.unitManager.updateUnitPosition(targetToPull, pullToPos.x, pullToPos.y);
+
+                    // Attack after pull
+                    if (unit.canAttack()) {
+                        scene.time.delayedCall(400, () => {
+                            scene.performAttack(unit, targetToPull);
+                        });
+                    }
+
+                    scene.time.delayedCall(1200, () => this.nextTurn());
+                    return;
+                }
+            }
+        }
+
+        // 2. If no pull was made, execute default AI
+        this.executeDefaultAITurn(playerUnits);
+    }
+
     // Calculate distance from a unit to another unit (accounting for 2x2 bosses)
     getDistanceToUnit(fromUnit, toUnit) {
         // For normal 1x1 units, use simple Manhattan distance to center
@@ -829,11 +933,6 @@ export class TurnSystem {
     isValidMoveForUnit(unit, x, y) {
         const bossSize = unit.bossSize || 1;
 
-        // Debug for bosses
-        if (bossSize > 1) {
-            console.log(`[AI Movement] Checking valid move for ${unit.name} to (${x},${y}), size ${bossSize}x${bossSize}`);
-        }
-
         for (let dy = 0; dy < bossSize; dy++) {
             for (let dx = 0; dx < bossSize; dx++) {
                 const checkX = x + dx;
@@ -842,25 +941,15 @@ export class TurnSystem {
                 // Check bounds
                 if (checkX < 0 || checkX >= CONFIG.GRID_WIDTH ||
                     checkY < 0 || checkY >= CONFIG.GRID_HEIGHT) {
-                    if (bossSize > 1) {
-                        console.log(`[AI Movement] Out of bounds at (${checkX},${checkY})`);
-                    }
                     return false;
                 }
 
                 // Check if occupied by another unit (not this unit)
                 const otherUnit = this.scene.unitManager.getUnitAt(checkX, checkY);
                 if (otherUnit && otherUnit !== unit) {
-                    if (bossSize > 1) {
-                        console.log(`[AI Movement] Blocked by ${otherUnit.name} at (${checkX},${checkY})`);
-                    }
                     return false;
                 }
             }
-        }
-
-        if (bossSize > 1) {
-            console.log(`[AI Movement] Move to (${x},${y}) is VALID`);
         }
         return true;
     }
@@ -1012,7 +1101,6 @@ export class TurnSystem {
                 const dx = Math.sign(bestX - unit.gridX);
                 const dy = Math.sign(bestY - unit.gridY);
 
-                console.log(`[Shaman King] Moving towards optimal position (${bestX},${bestY})`);
                 if (dx !== 0 && this.isValidMoveForUnit(unit, unit.gridX + dx, unit.gridY)) {
                     scene.moveUnitAI(unit, unit.gridX + dx, unit.gridY);
                     unit.hasMoved = true;
