@@ -512,8 +512,8 @@ export class UnitManager {
                     return;
                 }
             }
-            // Otherwise, only select if it's a player unit and it's the player's turn
-            if (unit.isPlayer && currentUnit && currentUnit.isPlayer) {
+            // Otherwise, only select if it's the current player unit's turn
+            if (unit.isPlayer && currentUnit === unit) {
                 this.scene.selectUnit(unit);
             }
         });
