@@ -302,6 +302,26 @@ Located in `TurnSystem.executeAITurn()`:
 
 ## Reward System
 
+### Enemy Factions (PVE)
+
+One of the following factions is randomly chosen at the start of a PVE run:
+
+#### Greenskin Horde
+- **Orc Warrior**: Basic melee
+- **Orc Brute**: Tank
+- **Orc Rogue**: Hit & Run
+- **Goblin Stone-Thrower**: Ranged
+
+#### Dungeon Dwellers
+- **Skeleton Soldier**: Melee with ranged resistance
+- **Skeleton Archer**: Ranged
+- **Animated Armor**: Heavy Tank
+- **Lost Spirit**: Elite with physical resistance and spell weakness
+
+#### Old God Worshippers
+- **Cultist Acolyte / Neophyte**: Weak cannon fodder
+- **Gibbering Horror / Flesh-warped Stalker**: Stronger, specialized units
+
 ### Victory Rewards (PVE, every battle)
 1. **New Unit** - Every 2 rounds (battle 2, 4, 6...), choose 1 of 3 random units
 2. **Unit Buff** - Choose 1 of 3 buffs (50% chance for legendary class buff)

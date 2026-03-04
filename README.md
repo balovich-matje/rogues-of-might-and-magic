@@ -1,4 +1,4 @@
-# ⚔️ Steel and Sigils v0.51
+# ⚔️ Steel and Sigils v0.52
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
@@ -89,14 +89,31 @@ Magic buffs can be acquired from victory rewards:
 
 ### Enemy Units (PVE only)
 
-Enemies scale each round: +250 points and +10% stats per battle.
+At the start of a PVE run, one of three enemy factions is randomly chosen. Enemies scale each round: +250 points and +10% stats per battle.
 
-| Unit | HP | DMG | MOV | INIT | Cost | Special |
-|------|----|-----|-----|------|------|---------|
-| 👹 Orc Warrior | 50 | 25 | 4 | 10 | 250 | Basic fighter |
-| 👿 Orc Brute | 200 | 50 | 2 | 6 | 500 | Tank |
-| 🥷 Orc Rogue | 60 | 35 | 6 | 16 | 500 | ⚡ Hit & Run |
-| 👺 Goblin Stone-Thrower | 35 | 25 | 3 | 8 | 250 | Ranged attacker |
+#### Greenskin Horde
+| Unit | HP | DMG | MOV | INIT | Special |
+|------|----|-----|-----|------|---------|
+| 👹 Orc Warrior | 50 | 25 | 4 | 10 | - |
+| 👿 Orc Brute | 200 | 50 | 2 | 6 | Tank |
+| 🥷 Orc Rogue | 60 | 35 | 6 | 16 | ⚡ Hit & Run |
+| 👺 Goblin Stone-Thrower | 35 | 25 | 3 | 8 | Ranged |
+
+#### Dungeon Dwellers
+| Unit | HP | DMG | MOV | INIT | Special |
+|------|----|-----|-----|------|---------|
+| 💀⚔️ Skeleton Soldier | 90 | 25 | 4 | 11 | 🛡️ -50% ranged dmg |
+| 💀🏹 Skeleton Archer | 50 | 30 | 2 | 14 | Ranged |
+| 🤖 Animated Armor | 220 | 45 | 2 | 5 | Tank |
+| 👻 Lost Spirit | 70 | 50 | 6 | 15 | ✨ Ethereal (-75% phys dmg, +50% spell dmg) |
+
+#### Old God Worshippers
+| Unit | HP | DMG | MOV | INIT | Special |
+|------|----|-----|-----|------|---------|
+| 👤 Cultist Acolyte | 40 | 20 | 4 | 10 | - |
+| 🤫 Cultist Neophyte | 35 | 15 | 3 | 9 | Ranged |
+| 🐙 Gibbering Horror | 80 | 40 | 3 | 11 | Ranged |
+| 🦎 Flesh-warped Stalker | 70 | 40 | 7 | 16 | Fast melee |
 
 ### PVE Progression
 

@@ -10,6 +10,12 @@ import { GridSystem } from './InputHandler.js';
 import { SpellSystem } from './SpellSystem.js';
 import { UIManager } from './UIHandler.js';
 
+const ENEMY_FACTIONS = {
+    GREENSKIN_HORDE: ['ORC_WARRIOR', 'ORC_BRUTE', 'ORC_ROGUE', 'GOBLIN_STONE_THROWER'],
+    DUNGEON_DWELLERS: ['ANIMATED_ARMOR', 'SKELETON_ARCHER', 'SKELETON_SOLDIER', 'LOST_SPIRIT'],
+    OLD_GOD_WORSHIPPERS: ['CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER']
+};
+
 // ============================================
 // BATTLE SCENE
 // ============================================
@@ -26,6 +32,7 @@ export class BattleScene extends Phaser.Scene {
         this.permanentBuffs = false;
         this.armyBuffs = false;
         this.battleNumber = 1;
+        this.currentEnemyFaction = 'GREENSKIN_HORDE';
         this.victoryShown = false;
         this.magicBuffs = [];
         this.selectedUnit = null;
@@ -52,7 +59,11 @@ export class BattleScene extends Phaser.Scene {
 
         // Load enemy unit images
         const enemyUnits = ['ORC_WARRIOR', 'ORC_BRUTE', 'ORC_ROGUE', 'GOBLIN_STONE_THROWER',
-            'OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN'];
+            'OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN',
+            // Dungeon Dwellers
+            'ANIMATED_ARMOR', 'SKELETON_ARCHER', 'SKELETON_SOLDIER', 'LOST_SPIRIT',
+            // Old God Worshippers
+            'CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER'];
         for (const unitType of enemyUnits) {
             const template = UNIT_TYPES[unitType];
             if (template && template.image) {
@@ -80,6 +91,17 @@ export class BattleScene extends Phaser.Scene {
         // Track battle number for scaling
         if (data && data.battleNumber) {
             this.battleNumber = data.battleNumber;
+        }
+
+        // Determine enemy faction for this run
+        if (this.battleNumber === 1) {
+            const factions = Object.keys(ENEMY_FACTIONS);
+            this.currentEnemyFaction = factions[Math.floor(Math.random() * factions.length)];
+        } else if (data && data.currentEnemyFaction) {
+            this.currentEnemyFaction = data.currentEnemyFaction;
+        } else {
+            // Fallback for safety
+            this.currentEnemyFaction = 'GREENSKIN_HORDE';
         }
 
         // Restore magic buffs from previous battle
@@ -228,7 +250,7 @@ export class BattleScene extends Phaser.Scene {
         }
 
         const totalPoints = 1000 + (this.battleNumber - 1) * 250;
-        const enemyTypes = ['ORC_WARRIOR', 'ORC_BRUTE', 'ORC_ROGUE', 'GOBLIN_STONE_THROWER'];
+        const enemyTypes = ENEMY_FACTIONS[this.currentEnemyFaction];
 
         let remainingPoints = totalPoints;
         const spawnedEnemies = [];
@@ -263,7 +285,7 @@ export class BattleScene extends Phaser.Scene {
             );
         } else {
             this.uiManager.showFloatingText(
-                `Battle 1 - Defeat the orc horde!`,
+                `Battle 1 - Defeat the enemy!`,
                 320, 100, '#A68966'
             );
         }
@@ -1765,7 +1787,8 @@ export class BattleScene extends Phaser.Scene {
         this.scene.restart({
             battleNumber: nextBattleNumber,
             placedUnits: playerUnits,
-            magicBuffs: this.magicBuffs
+            magicBuffs: this.magicBuffs,
+            currentEnemyFaction: this.currentEnemyFaction
         });
     }
 

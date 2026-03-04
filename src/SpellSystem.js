@@ -220,7 +220,7 @@ export class SpellSystem {
         const damage = this.getSpellDamage(spell.power);
         for (const unit of targets) {
             this.scene.time.delayedCall(200, () => {
-                unit.takeDamage(damage);
+                unit.takeSpellDamage(damage);
                 this.scene.uiManager.showDamageText(unit, damage);
                 this.scene.checkVictoryCondition();
             });
@@ -246,7 +246,7 @@ export class SpellSystem {
         const damage = this.getSpellDamage(spell.power);
         for (const unit of targets) {
             this.scene.time.delayedCall(200, () => {
-                unit.takeDamage(damage);
+                unit.takeSpellDamage(damage);
                 unit.iceSlowRounds = 2;
                 unit.moveRange = Math.max(1, unit.moveRange - 1);
                 this.scene.uiManager.showDamageText(unit, damage);
@@ -261,7 +261,7 @@ export class SpellSystem {
 
         const damage = this.getSpellDamage(spell.power);
         this.scene.time.delayedCall(200, () => {
-            unit.takeDamage(damage);
+            unit.takeSpellDamage(damage);
             this.scene.uiManager.showDamageText(unit, damage);
             this.scene.checkVictoryCondition();
         });
@@ -341,7 +341,7 @@ export class SpellSystem {
         targets.forEach((unit, index) => {
             this.scene.time.delayedCall(index * 300, () => {
                 this.createLightningEffect(unit);
-                unit.takeDamage(damage);
+                unit.takeSpellDamage(damage);
                 this.scene.uiManager.showDamageText(unit, damage);
                 this.scene.checkVictoryCondition();
             });
