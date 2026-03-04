@@ -700,57 +700,126 @@ export class BattleScene extends Phaser.Scene {
     // UI Methods
     openSpellBook() {
         const modal = document.getElementById('spellbook-modal');
-        const grid = document.getElementById('spell-grid');
+        if (!modal.classList.contains('hidden')) return;
 
         this.uiManager.updateManaDisplay();
 
+        // Define categories with styles
+        this.spellBookPages = [
+            {
+                name: 'Destructo',
+                icon: '🔥',
+                filter: (s) => ['singleDamage', 'aoeDamage', 'meteor', 'iceStorm', 'chainLightning'].includes(s.effect),
+                style: { bg: '#2a1f1f', header: '#ff4444' }
+            },
+            {
+                name: 'Restoratio',
+                icon: '💚',
+                filter: (s) => ['heal', 'regenerate', 'cure'].includes(s.effect),
+                style: { bg: '#2a3a2a', header: '#44ff44' }
+            },
+            {
+                name: 'Benedictio',
+                icon: '🛡️',
+                filter: (s) => ['haste', 'shield', 'bless'].includes(s.effect),
+                style: { bg: '#2D241E', header: '#A68966' }
+            },
+            {
+                name: 'Utilitas',
+                icon: '✨',
+                filter: (s) => !['singleDamage', 'aoeDamage', 'meteor', 'iceStorm', 'chainLightning', 'heal', 'regenerate', 'cure', 'haste', 'shield', 'bless'].includes(s.effect),
+                style: { bg: '#2D241E', header: '#A68966' }
+            }
+        ];
+
+        // Initialize page if not set
+        if (this.currentSpellPage === undefined) this.currentSpellPage = 0;
+
+        this.renderSpellBookPage();
+        modal.classList.remove('hidden');
+
+        // Add navigation listeners
+        this.input.keyboard.on('keydown-LEFT', this.prevSpellPage, this);
+        this.input.keyboard.on('keydown-RIGHT', this.nextSpellPage, this);
+    }
+
+    closeSpellBook() {
+        document.getElementById('spellbook-modal').classList.add('hidden');
+        this.input.keyboard.off('keydown-LEFT', this.prevSpellPage, this);
+        this.input.keyboard.off('keydown-RIGHT', this.nextSpellPage, this);
+    }
+
+    prevSpellPage() {
+        if (!this.spellBookPages) return;
+        this.currentSpellPage = (this.currentSpellPage - 1 + this.spellBookPages.length) % this.spellBookPages.length;
+        this.renderSpellBookPage();
+    }
+
+    nextSpellPage() {
+        if (!this.spellBookPages) return;
+        this.currentSpellPage = (this.currentSpellPage + 1) % this.spellBookPages.length;
+        this.renderSpellBookPage();
+    }
+
+    renderSpellBookPage() {
+        const grid = document.getElementById('spell-grid');
+        const content = document.querySelector('.spellbook-content');
+        const page = this.spellBookPages[this.currentSpellPage];
+
         grid.innerHTML = '';
 
-        // Define categories
-        const categories = {
-            'Destructo': [], // Damage
-            'Restoratio': [], // Healing
-            'Benedictio': [], // Buffs
-            'Utilitas': []    // Utility
-        };
+        // Apply page style
+        content.style.backgroundColor = page.style.bg;
+        content.style.transition = 'background-color 0.3s ease';
 
-        // Sort spells into categories
-        for (const [key, spell] of Object.entries(SPELLS)) {
-            let category = 'Utilitas';
+        // Create top navigation container
+        const topNav = document.createElement('div');
+        topNav.style.cssText = 'display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #5D4E3E;';
 
-            // Categorize based on effect
-            if (['singleDamage', 'aoeDamage', 'meteor', 'iceStorm', 'chainLightning'].includes(spell.effect)) {
-                category = 'Destructo';
-            } else if (['heal', 'regenerate', 'cure'].includes(spell.effect)) {
-                category = 'Restoratio';
-            } else if (['haste', 'shield', 'bless'].includes(spell.effect)) {
-                category = 'Benedictio';
+        // Left Arrow
+        const leftArrow = document.createElement('span');
+        leftArrow.innerHTML = '◀';
+        leftArrow.style.cssText = 'cursor: pointer; font-size: 20px; user-select: none;';
+        leftArrow.onclick = () => this.prevSpellPage();
+        topNav.appendChild(leftArrow);
+
+        // Category tabs
+        this.spellBookPages.forEach((p, i) => {
+            const tab = document.createElement('div');
+            tab.innerHTML = `${p.icon} ${p.name}`;
+            tab.style.cssText = 'cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: all 0.2s ease; user-select: none;';
+            tab.onclick = () => {
+                this.currentSpellPage = i;
+                this.renderSpellBookPage();
+            };
+
+            if (i === this.currentSpellPage) {
+                tab.style.transform = 'scale(1.2)';
+                tab.style.color = p.style.header;
+                tab.style.background = 'rgba(0,0,0,0.3)';
+                tab.style.fontWeight = 'bold';
+                tab.style.textShadow = `0 0 8px ${p.style.header}`;
+            } else {
+                tab.style.color = '#8B7355';
+                tab.style.transform = 'scale(1.0)';
             }
+            topNav.appendChild(tab);
+        });
 
-            categories[category].push({ key, spell });
-        }
+        // Right Arrow
+        const rightArrow = document.createElement('span');
+        rightArrow.innerHTML = '▶';
+        rightArrow.style.cssText = 'cursor: pointer; font-size: 20px; user-select: none;';
+        rightArrow.onclick = () => this.nextSpellPage();
+        topNav.appendChild(rightArrow);
 
-        // Render categories
-        for (const [categoryName, spells] of Object.entries(categories)) {
-            if (spells.length === 0) continue;
+        grid.appendChild(topNav);
 
-            // Add Category Header
-            const header = document.createElement('div');
-            header.className = 'spell-category-header';
-            header.style.gridColumn = '1 / -1';
-            header.style.color = '#A68966';
-            header.style.borderBottom = '1px solid #5D4E3E';
-            header.style.padding = '10px 0 5px 0';
-            header.style.marginTop = '10px';
-            header.style.marginBottom = '10px';
-            header.style.fontSize = '18px';
-            header.style.fontWeight = 'bold';
-            header.style.fontFamily = 'serif';
-            header.innerHTML = `✨ ${categoryName}`;
-            grid.appendChild(header);
-
-            // Add Spells
-            for (const { key, spell } of spells) {
+        // Filter and render spells
+        let spellCount = 0;
+        for (const [key, spell] of Object.entries(SPELLS)) {
+            if (page.filter(spell)) {
+                spellCount++;
                 const card = document.createElement('div');
                 card.className = 'spell-card';
 
@@ -761,7 +830,7 @@ export class BattleScene extends Phaser.Scene {
 
                 card.innerHTML = `
                     <div style="font-size: 32px; margin-bottom: 5px;">${spell.icon}</div>
-                    <div style="color: #A68966; font-weight: bold;">${spell.name}</div>
+                    <div style="color: ${page.style.header}; font-weight: bold;">${spell.name}</div>
                     <div class="spell-type">${spell.type}</div>
                     <div class="spell-desc">${spell.description}</div>
                     <div class="spell-cost ${!canAfford ? 'too-expensive' : ''}">💧 ${Math.floor(spell.manaCost * this.manaCostMultiplier)} Mana</div>
@@ -775,11 +844,15 @@ export class BattleScene extends Phaser.Scene {
             }
         }
 
-        modal.classList.remove('hidden');
-    }
-
-    closeSpellBook() {
-        document.getElementById('spellbook-modal').classList.add('hidden');
+        if (spellCount === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.style.gridColumn = '1 / -1';
+            emptyMsg.style.textAlign = 'center';
+            emptyMsg.style.color = '#888';
+            emptyMsg.style.padding = '40px';
+            emptyMsg.textContent = 'No spells known in this school.';
+            grid.appendChild(emptyMsg);
+        }
     }
 
     // Victory/Defeat
