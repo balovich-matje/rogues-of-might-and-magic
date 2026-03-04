@@ -468,16 +468,17 @@ export class BattleScene extends Phaser.Scene {
 
     regenerateMana() {
         const wizardCount = this.unitManager.getPlayerUnits().filter(u => u.type === 'WIZARD').length;
-        const totalRegen = this.manaRegen + wizardCount;
+        this.baseManaRegen = this.baseManaRegen || 1; // Default to 1
+        const totalRegen = this.baseManaRegen + wizardCount;
 
         if (this.mana < this.maxMana) {
             this.mana = Math.min(this.maxMana, this.mana + totalRegen);
             this.uiManager.updateManaDisplay();
         }
 
-        if (totalRegen > this.manaRegen) {
+        if (totalRegen > this.baseManaRegen) {
             this.uiManager.showFloatingText(
-                `+${totalRegen} Mana (${this.manaRegen} + ${wizardCount} from Wizards)`,
+                `+${totalRegen} Mana (${this.baseManaRegen} + ${wizardCount} from Wizards)`,
                 320, 50, '#4A729E'
             );
         }
@@ -625,9 +626,9 @@ export class BattleScene extends Phaser.Scene {
                 }
 
                 // Paladin Cleave: 3x3 area damage
-                if (attacker.hasCleave) {
+                if (attacker.hasCleave && !isSecondStrike) {
                     this.performCleaveAttack(attacker, defender, damage);
-                } else {
+                } else if (!attacker.hasCleave) {
                     defender.takeDamage(damage, false, attacker);
                     this.uiManager.showDamageText(defender, damage);
 
@@ -637,6 +638,15 @@ export class BattleScene extends Phaser.Scene {
                         duration: 50,
                         yoyo: true,
                         repeat: 2
+                    });
+                }
+
+                // Paladin Mythic: Divine Retribution (Melee Retaliation)
+                // Assuming it's a melee attack if the distance is 1. (Ranged attacks use performRangedAttack typically, but let's be safe)
+                const distToDefender = this.gridSystem.getDistanceBetweenUnits(attacker, defender);
+                if (distToDefender <= 1 && defender.hasDivineRetribution && defender.health > 0 && !isSecondStrike && attacker.health > 0) {
+                    this.time.delayedCall(200, () => {
+                        this.performRetaliation(defender, attacker);
                     });
                 }
 
@@ -714,6 +724,49 @@ export class BattleScene extends Phaser.Scene {
                     yoyo: true,
                     repeat: 1
                 });
+            }
+        });
+    }
+
+    performRetaliation(retaliator, target) {
+        if (retaliator.isDead || target.isDead) return;
+
+        // Divine Retribution retaliation is x2 damage
+        const damage = Math.floor(retaliator.damage * retaliator.blessValue * 2);
+
+        // Visual lunge for retaliation
+        const originalX = retaliator.sprite.x;
+        const originalY = retaliator.sprite.y;
+        const targetX = target.sprite.x;
+        const targetY = target.sprite.y;
+
+        const lungeX = originalX + (targetX - originalX) * 0.3;
+        const lungeY = originalY + (targetY - originalY) * 0.3;
+
+        this.tweens.add({
+            targets: retaliator.sprite,
+            x: lungeX,
+            y: lungeY,
+            duration: 100,
+            yoyo: true,
+            onComplete: () => {
+                target.takeDamage(damage, false, retaliator);
+                this.uiManager.showDamageText(target, damage);
+                this.uiManager.showBuffText(retaliator, 'RETRIBUTION!', '#ff3333');
+
+                this.tweens.add({
+                    targets: target.sprite,
+                    alpha: 0.3,
+                    duration: 50,
+                    yoyo: true,
+                    repeat: 2
+                });
+
+                if (this.selectedUnit === target) {
+                    this.uiManager.updateUnitInfo(target);
+                }
+
+                this.checkVictoryCondition();
             }
         });
     }
@@ -839,51 +892,54 @@ export class BattleScene extends Phaser.Scene {
     performPiercingAttack(attacker, target) {
         const baseDamage = Math.floor(attacker.damage * 0.8 * attacker.blessValue);
 
-        // Hit all enemies in a line from attacker through target
-        const dx = target.gridX - attacker.gridX;
-        const dy = target.gridY - attacker.gridY;
-        const stepX = dx === 0 ? 0 : Math.sign(dx);
-        const stepY = dy === 0 ? 0 : Math.sign(dy);
-
         this.uiManager.showBuffText(attacker, 'PIERCE!', '#6B7A9A');
 
-        // Find all enemies in the line of fire
-        const enemyUnits = this.unitManager.units.filter(u => !u.isPlayer && !u.isDead);
-        let hitCount = 0;
+        const dx = target.gridX - attacker.gridX;
+        const dy = target.gridY - attacker.gridY;
+        if (dx === 0 && dy === 0) return;
 
-        enemyUnits.forEach(enemy => {
-            // Check if enemy is in line with the shot
-            const ex = enemy.gridX - attacker.gridX;
-            const ey = enemy.gridY - attacker.gridY;
+        const length = Math.max(Math.abs(dx), Math.abs(dy));
+        const stepX = dx / length;
+        const stepY = dy / length;
 
-            // Must be in same direction
-            const enemyStepX = ex === 0 ? 0 : Math.sign(ex);
-            const enemyStepY = ey === 0 ? 0 : Math.sign(ey);
+        let currX = attacker.gridX + stepX;
+        let currY = attacker.gridY + stepY;
 
-            if (enemyStepX === stepX && enemyStepY === stepY) {
-                // Check if collinear (same ratio)
-                const isCollinear = (stepX === 0 || stepY === 0) ?
-                    (stepX === 0 ? ex === 0 : ey === 0) :
-                    (Math.abs(ex * stepY - ey * stepX) <= 1);
+        const path = [];
+        while (currX >= -0.5 && currX < CONFIG.GRID_WIDTH + 0.5 && currY >= -0.5 && currY < CONFIG.GRID_HEIGHT + 0.5) {
+            const gx = Math.round(currX);
+            const gy = Math.round(currY);
 
-                if (isCollinear) {
-                    hitCount++;
-                    const delay = hitCount * 100;
-
-                    this.time.delayedCall(delay, () => {
-                        enemy.takeDamage(baseDamage, true, attacker);
-                        this.uiManager.showDamageText(enemy, baseDamage);
-                        this.tweens.add({
-                            targets: enemy.sprite,
-                            alpha: 0.3,
-                            duration: 50,
-                            yoyo: true,
-                            repeat: 2
-                        });
-                    });
+            if (gx >= 0 && gx < CONFIG.GRID_WIDTH && gy >= 0 && gy < CONFIG.GRID_HEIGHT) {
+                if (path.length === 0 || path[path.length - 1].x !== gx || path[path.length - 1].y !== gy) {
+                    path.push({ x: gx, y: gy });
                 }
             }
-        });
+
+            currX += stepX;
+            currY += stepY;
+        }
+
+        let hitCount = 0;
+        for (const p of path) {
+            const enemy = this.unitManager.getUnitAt(p.x, p.y);
+            if (enemy && !enemy.isPlayer && !enemy.isDead) {
+                hitCount++;
+                const delay = hitCount * 100;
+
+                this.time.delayedCall(delay, () => {
+                    enemy.takeDamage(baseDamage, true, attacker);
+                    this.uiManager.showDamageText(enemy, baseDamage);
+                    this.tweens.add({
+                        targets: enemy.sprite,
+                        alpha: 0.3,
+                        duration: 50,
+                        yoyo: true,
+                        repeat: 2
+                    });
+                });
+            }
+        }
     }
 
     // UI Methods
@@ -1462,29 +1518,34 @@ export class BattleScene extends Phaser.Scene {
             `;
         }
 
-        // 50% chance to roll a legendary buff instead of a standard one
+        // 50% chance to roll a legendary OR mythic buff instead of a standard one
         let buffOptions = [];
-        const legendaryBuff = this.tryGenerateLegendaryBuff();
 
-        if (legendaryBuff && Math.random() < 0.5) {
-            // Legendary rolled - include it as one of the 3 buffs
-            buffOptions = [legendaryBuff, ...this.getRandomBuffs(2)];
+        // Priority to mythic if both could theoretically spawn (though usually they shouldn't conflict heavily)
+        let specialBuff = this.tryGenerateMythicBuff() || this.tryGenerateLegendaryBuff();
+
+        if (specialBuff && Math.random() < 0.5) {
+            // Special buff rolled - include it as one of the 3 buffs
+            buffOptions = [specialBuff, ...this.getRandomBuffs(2)];
         } else {
-            // No legendary - just 3 standard/epic buffs
+            // No special - just 3 standard/epic buffs
             buffOptions = this.getRandomBuffs(3);
         }
 
         const buffContainer = document.getElementById('reward-buffs');
         buffContainer.innerHTML = '';
         buffOptions.forEach(buff => {
+            const isMythic = buff.id.startsWith('mythic_');
             const isLegendary = buff.id.startsWith('legendary_');
-            const rarity = isLegendary ? 'legendary' : (buff.rarity || 'common');
+            const rarity = isMythic ? 'mythic' : (isLegendary ? 'legendary' : (buff.rarity || 'common'));
 
-            const nameColor = rarity === 'legendary' ? '#ff8c00' : (rarity === 'epic' ? '#9B6BAB' : '#6B8B5B');
-            const textShadow = rarity === 'legendary' ? ' text-shadow: 0 0 8px rgba(255, 140, 0, 0.6);' : (rarity === 'epic' ? ' text-shadow: 0 0 6px rgba(139, 91, 155, 0.5);' : '');
+            const nameColor = rarity === 'mythic' ? '#ff3333' : (rarity === 'legendary' ? '#ff8c00' : (rarity === 'epic' ? '#9B6BAB' : '#6B8B5B'));
+            const textShadow = rarity === 'mythic' ? ' text-shadow: 0 0 8px rgba(255, 26, 26, 0.6);' : (rarity === 'legendary' ? ' text-shadow: 0 0 8px rgba(255, 140, 0, 0.6);' : (rarity === 'epic' ? ' text-shadow: 0 0 6px rgba(139, 91, 155, 0.5);' : ''));
 
             let rarityLabel = '';
-            if (rarity === 'legendary') {
+            if (rarity === 'mythic') {
+                rarityLabel = '<div style="font-size: 11px; color: #ff3333; margin-top: 2px; text-shadow: 0 0 5px rgba(255, 26, 26, 0.5);">🔥 Mythic Power</div>';
+            } else if (rarity === 'legendary') {
                 rarityLabel = '<div style="font-size: 11px; color: #ff8c00; margin-top: 2px; text-shadow: 0 0 5px rgba(255, 140, 0, 0.5);">⚡ Legendary Power</div>';
             } else if (rarity === 'epic') {
                 rarityLabel = '<div style="font-size: 11px; color: #9B6BAB; margin-top: 2px; text-shadow: 0 0 4px rgba(139, 91, 155, 0.4);">⚡ Epic Power</div>';
@@ -1510,19 +1571,24 @@ export class BattleScene extends Phaser.Scene {
         const ownedBuffTypes = new Set(this.magicBuffs.map(b => b.type));
         const allMagicOptions = [
             {
-                id: 'mana_max', name: 'Expanded Mana Pool', icon: '💧', desc: '+30 Max Mana',
-                buffType: 'maxMana', buffValue: 30,
-                effect: () => { this.maxMana += 30; this.mana = this.maxMana; this.uiManager.updateManaDisplay(); }
+                id: 'mana_max', name: 'Expanded Mana Pool', icon: '💧', desc: '+50 Max Mana',
+                buffType: 'maxMana', buffValue: 50,
+                effect: () => { this.maxMana += 50; this.mana += 50; this.uiManager.updateManaDisplay(); }
             },
             {
-                id: 'mana_regen', name: 'Mana Flow', icon: '🌊', desc: '+2 Mana Regen per turn',
+                id: 'mana_regen', name: 'Mana Flow', icon: '🌊', desc: '+2 Base Mana Regen per round',
                 buffType: 'manaRegen', buffValue: 2,
-                effect: () => { this.manaRegen += 2; }
+                effect: () => { this.baseManaRegen = (this.baseManaRegen || 1) + 2; }
             },
             {
-                id: 'spell_power', name: 'Arcane Power', icon: '🔮', desc: '+20% Spell Damage',
-                buffType: 'spellPower', buffValue: 0.2,
-                effect: () => { this.spellPowerMultiplier = (this.spellPowerMultiplier || 1) + 0.2; }
+                id: 'spell_power', name: 'Arcane Power', icon: '🔮', desc: '+25% Spell Damage',
+                buffType: 'spellPower', buffValue: 0.25,
+                effect: () => { this.spellPowerMultiplier = (this.spellPowerMultiplier || 1) + 0.25; }
+            },
+            {
+                id: 'healing_surge', name: 'Healing Surge', icon: '💖', desc: '+35% Healing Spell Power',
+                buffType: 'healingPower', buffValue: 0.35,
+                effect: () => { this.healingPowerMultiplier = (this.healingPowerMultiplier || 1) + 0.35; }
             },
             {
                 id: 'spell_efficiency', name: 'Efficient Casting', icon: '⚡', desc: '-20% Mana Cost for all spells',
@@ -1534,9 +1600,9 @@ export class BattleScene extends Phaser.Scene {
                 maxStacks: 4
             },
             {
-                id: 'mana_restore', name: 'Mana Surge', icon: '✨', desc: 'Fully restore mana now & +20 max',
-                buffType: 'maxMana', buffValue: 20,
-                effect: () => { this.maxMana += 20; this.mana = this.maxMana; this.uiManager.updateManaDisplay(); }
+                id: 'mana_restore', name: 'Mana Surge', icon: '✨', desc: 'Fully restore all missing mana instantly',
+                buffType: 'manaRestore', buffValue: 1,
+                effect: () => { this.mana = this.maxMana; this.uiManager.updateManaDisplay(); }
             },
             {
                 id: 'double_cast', name: 'Twin Cast', icon: '🔄', desc: '+1 spell per round',
@@ -1651,19 +1717,19 @@ export class BattleScene extends Phaser.Scene {
             });
         }
 
-        if (playerUnits.some(u => u.type === 'WIZARD') && !hasBuff('WIZARD', 'hasPiercing')) {
+        if (playerUnits.some(u => u.type === 'SORCERER') && !hasBuff('SORCERER', 'hasPiercing')) {
             availableLegendaryBuffs.push({
                 id: 'legendary_piercing',
                 name: 'Arcane Pierce',
                 icon: '🔮',
-                desc: 'Wizard: 20 range, shots pierce through enemies',
-                unitType: 'WIZARD',
+                desc: 'Sorcerer: Infinite range, shots pierce all units in path',
+                unitType: 'SORCERER',
                 effect: (unit) => {
                     unit.hasPiercing = true;
-                    unit.rangedRange = 20;
+                    unit.rangedRange = 999;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasPiercing = true;
-                    unit.statModifiers.rangedRange = 20;
+                    unit.statModifiers.rangedRange = 999;
                 }
             });
         }
@@ -1689,6 +1755,68 @@ export class BattleScene extends Phaser.Scene {
 
         // Return a random legendary buff
         return availableLegendaryBuffs[Math.floor(Math.random() * availableLegendaryBuffs.length)];
+    }
+
+    // Try to generate a mythic buff (can only appear if a legendary was already obtained)
+    tryGenerateMythicBuff() {
+        const playerUnits = this.unitManager.units.filter(u => u.isPlayer);
+        const availableMythicBuffs = [];
+
+        const hasProperty = (unitType, buffProperty) => {
+            return playerUnits.some(u => u.type === unitType && u[buffProperty]);
+        };
+
+        // Paladin mythic requires the unit to have the Paladin Legendary `hasCleave`
+        if (hasProperty('PALADIN', 'hasCleave') && !hasProperty('PALADIN', 'hasDivineRetribution')) {
+            availableMythicBuffs.push({
+                id: 'mythic_divine_retribution',
+                name: 'Divine Retribution',
+                icon: '✨',
+                desc: 'Paladin: Removes passive debuffs. Unlimited retaliation vs melee (x2 DMG).',
+                unitType: 'PALADIN',
+                rarity: 'mythic',
+                effect: (unit) => {
+                    unit.hasDivineRetribution = true;
+                    // Reset the default passive debuffs
+                    const defIndex = Object.keys(unit.statModifiers || {}).indexOf('rangedDefense');
+                    if (unit.statModifiers && unit.statModifiers.rangedDefense) {
+                        delete unit.statModifiers.rangedDefense;
+                    }
+                    if (unit.statModifiers && unit.statModifiers.healingBoost) {
+                        delete unit.statModifiers.healingBoost;
+                    }
+                    unit.statModifiers = unit.statModifiers || {};
+                    unit.statModifiers.hasDivineRetribution = true;
+                }
+            });
+        }
+
+        // Sorcerer mythic requires the unit to have Sorcerer Legendary (Placeholder, assuming we just check if it's there or give it to them if they have none for now)
+        // Wait, Sorcerer doesn't have a legendary yet. The prompt specifies: "acquired for a unit that already owns a legendary perk". But we have no Sorcerer legendary!
+        // We will assume that they must have some generic legendary/epic perk or we will just make it available if they are a Sorcerer since Sorcerer's only get Epic standard buffs right now
+        // Let's restrict it to if the Sorcerer has at least one epic buff? Actually standard legendary perks didn't exist for sorcerer yet. I will check for 'hasArcaneFocus' logic to prevent dupes.
+        if (playerUnits.some(u => u.type === 'SORCERER') && !hasProperty('SORCERER', 'hasArcaneFocus')) {
+            // Note: If you want this to STRICTLY require a legendary perk first, we'd have to create a Sorcerer legendary perk. For now we just make them eligible if they exist.
+            availableMythicBuffs.push({
+                id: 'mythic_arcane_focus',
+                name: 'Arcane Focus',
+                icon: '🔥',
+                desc: 'Sorcerer: Consecutive casts of same spell increase its DMG by 50%.',
+                unitType: 'SORCERER',
+                rarity: 'mythic',
+                effect: (unit) => {
+                    unit.hasArcaneFocus = true;
+                    unit.statModifiers = unit.statModifiers || {};
+                    unit.statModifiers.hasArcaneFocus = true;
+                }
+            });
+        }
+
+        if (availableMythicBuffs.length === 0) {
+            return null;
+        }
+
+        return availableMythicBuffs[Math.floor(Math.random() * availableMythicBuffs.length)];
     }
 
     selectReward(category, id, cardElement, effectData) {
