@@ -643,6 +643,9 @@ export class TurnSystem {
             // Re-enable spellbook button for player's turn
             this.scene.spellSystem.resetSpellButton();
         }
+
+        // Ensure ability button updates properly on turn start
+        this.scene.uiManager.updateAbilityButton();
     }
 
     startNewRound() {

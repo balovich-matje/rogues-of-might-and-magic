@@ -71,50 +71,42 @@ export class UIManager {
         if (infoPanel) {
             infoPanel.innerHTML = unit.getDisplayStats();
         }
+    }
 
-        // Manage special ability button
+    // Updates the unique ability button state, only call this on active unit selection/turn changes
+    updateAbilityButton() {
         const abilityBtn = document.getElementById('unit-ability-btn');
         const abilityNameSpan = document.getElementById('unit-ability-name');
 
-        if (abilityBtn && abilityNameSpan) {
+        if (abilityBtn && abilityNameSpan && this.scene.turnSystem) {
+            const unit = this.scene.turnSystem.currentUnit;
+
             // Check if it's the player's turn and the current unit is selected
-            const isTurn = this.scene.turnSystem &&
-                this.scene.turnSystem.currentUnit === unit &&
+            const isTurn = unit &&
                 unit.isPlayer &&
                 !unit.hasMoved &&
                 !unit.hasAttacked;
 
-            // Define which units have active abilities
-            let abilityName = null;
             let canUseAbility = false;
 
-            if (unit.type === 'CLERIC') {
-                abilityName = 'Empowered Heal';
-                canUseAbility = isTurn && !unit.hasHealed;
-            } else if (unit.type === 'OCTO') {
-                abilityName = 'Tentacle Pull';
-                canUseAbility = isTurn && !unit.hasPulled;
+            if (unit) {
+                if (unit.type === 'CLERIC') {
+                    canUseAbility = isTurn && !unit.hasHealed;
+                } else if (unit.type === 'OCTO') {
+                    canUseAbility = isTurn && !unit.hasPulled;
+                }
             }
 
-            if (abilityName) {
-                abilityNameSpan.textContent = abilityName;
-                if (canUseAbility) {
-                    abilityBtn.disabled = false;
-                    abilityBtn.style.filter = 'none';
-                    abilityBtn.style.opacity = '1';
-                    abilityBtn.style.background = '#2D241E';
-                    abilityBtn.style.borderColor = '#A68966';
-                    abilityBtn.style.color = '#E3D5B8';
-                } else {
-                    abilityBtn.disabled = true;
-                    abilityBtn.style.filter = 'grayscale(100%)';
-                    abilityBtn.style.opacity = '0.5';
-                    abilityBtn.style.background = '#3c3c3c';
-                    abilityBtn.style.borderColor = '#555';
-                    abilityBtn.style.color = '#888';
-                }
+            abilityNameSpan.textContent = '(U)nique ability';
+
+            if (canUseAbility) {
+                abilityBtn.disabled = false;
+                abilityBtn.style.filter = 'none';
+                abilityBtn.style.opacity = '1';
+                abilityBtn.style.background = '#2D241E';
+                abilityBtn.style.borderColor = '#A68966';
+                abilityBtn.style.color = '#E3D5B8';
             } else {
-                abilityNameSpan.textContent = 'Special Ability';
                 abilityBtn.disabled = true;
                 abilityBtn.style.filter = 'grayscale(100%)';
                 abilityBtn.style.opacity = '0.5';

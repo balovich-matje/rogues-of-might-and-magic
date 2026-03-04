@@ -233,6 +233,15 @@ export class BattleScene extends Phaser.Scene {
             }
         });
 
+        this.input.keyboard.on('keydown-U', () => {
+            if (this.turnSystem.currentUnit && this.turnSystem.currentUnit.isPlayer) {
+                const abilityBtn = document.getElementById('unit-ability-btn');
+                if (abilityBtn && !abilityBtn.disabled) {
+                    this.useUnitAbility();
+                }
+            }
+        });
+
         this.input.keyboard.on('keydown-ESC', () => {
             // Check if spellbook modal is open - close it
             const spellbookModal = document.getElementById('spellbook-modal');
@@ -1965,6 +1974,7 @@ export class BattleScene extends Phaser.Scene {
             this.gridSystem.clearHighlights();
             this.cancelSpell();
             this.turnSystem.nextTurn();
+            this.uiManager.updateAbilityButton();
         }
     }
 
