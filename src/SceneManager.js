@@ -43,9 +43,6 @@ export class BattleScene extends Phaser.Scene {
         this.combatLog = [];
         this.combatLogOpen = false;
 
-        // PVP context
-        this.isPVPContext = false;
-        this.pvpManager = null;
     }
 
     preload() {
@@ -85,11 +82,6 @@ export class BattleScene extends Phaser.Scene {
         this.spellSystem = new SpellSystem(this);
         this.uiManager = new UIManager(this);
 
-        // Handle PVP context
-        if (data && data.isPVPContext) {
-            this.isPVPContext = true;
-            this.pvpManager = data.pvpManager;
-        }
 
         // Track battle number for scaling
         if (data && data.battleNumber) {
@@ -1325,16 +1317,6 @@ export class BattleScene extends Phaser.Scene {
             document.getElementById('defeat-message').style.display = 'block';
             document.getElementById('victory-subtitle').style.display = 'none';
             confirmBtn.style.display = 'none';
-
-            // If in PVP context, report defeat to PVPMatchScene
-            if (this.isPVPContext) {
-                setTimeout(() => {
-                    const pvpMatchScene = this.scene.get('PVPMatchScene');
-                    if (pvpMatchScene) {
-                        pvpMatchScene.reportBattleComplete(false, [], this.magicBuffs);
-                    }
-                }, 3000); // Give player time to see defeat message
-            }
         }
 
         victoryScreen.classList.remove('hidden');
@@ -2222,15 +2204,6 @@ export class BattleScene extends Phaser.Scene {
 
         const nextBattleNumber = this.battleNumber + 1;
 
-        // If in PVP context, report to PVPMatchScene instead of restarting
-        if (this.isPVPContext) {
-            const pvpMatchScene = this.scene.get('PVPMatchScene');
-            if (pvpMatchScene) {
-                pvpMatchScene.reportBattleComplete(true, playerUnits, this.magicBuffs);
-            }
-            return;
-        }
-
         this.scene.restart({
             battleNumber: nextBattleNumber,
             placedUnits: playerUnits,
@@ -2274,13 +2247,10 @@ export class PreGameScene extends Phaser.Scene {
         this.placementMode = false;
         this.selectedPlacementUnit = null;
 
-        // PVP context
-        this.isPVPMode = false;
-        this.pvpManager = null;
     }
 
     getStartingPoints() {
-        return this.isPVPMode ? 2500 : 1000;
+        return 1000;
     }
 
     create() {
@@ -2298,12 +2268,6 @@ export class PreGameScene extends Phaser.Scene {
         let placementStartX = 0;
         let placementEndX = 2;
 
-        if (this.isPVPMode && this.pvpManager) {
-            if (!this.pvpManager.isHostPlayer()) {
-                placementStartX = CONFIG.GRID_WIDTH - 2;
-                placementEndX = CONFIG.GRID_WIDTH;
-            }
-        }
 
         for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
             for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
@@ -2376,11 +2340,6 @@ export class PreGameScene extends Phaser.Scene {
         let placementEndX = 2;
         let initialPlacementX = 0;
 
-        if (this.isPVPMode && this.pvpManager && !this.pvpManager.isHostPlayer()) {
-            placementStartX = CONFIG.GRID_WIDTH - 2;
-            placementEndX = CONFIG.GRID_WIDTH;
-            initialPlacementX = CONFIG.GRID_WIDTH - 1;
-        }
 
         // Auto-place units
         for (const [type, count] of Object.entries(this.unitCounts)) {
@@ -2484,10 +2443,6 @@ export class PreGameScene extends Phaser.Scene {
         let placementStartX = 0;
         let placementEndX = 2;
 
-        if (this.isPVPMode && this.pvpManager && !this.pvpManager.isHostPlayer()) {
-            placementStartX = CONFIG.GRID_WIDTH - 2;
-            placementEndX = CONFIG.GRID_WIDTH;
-        }
 
         // Get all available cells in the zone
         const availableCells = [];
@@ -2533,331 +2488,10 @@ export class PreGameScene extends Phaser.Scene {
         this.placedUnits.forEach(u => u.sprite.destroy());
         this.placedUnits = [];
 
-        if (this.isPVPMode && this.pvpManager) {
-            this.scene.start('PVPMatchScene', {
-                pvpManager: this.pvpManager,
-                sessionKey: this.pvpManager.getSessionKey(),
-                playerNumber: this.pvpManager.getPlayerNumber(),
-                army: finalPlacement
-            });
-        } else {
-            this.scene.start('BattleScene', {
-                placedUnits: finalPlacement,
-                battleNumber: 1
-            });
-        }
-    }
-
-    // ============================================
-    // PVP METHODS
-    // ============================================
-
-    setGameMode(mode) {
-        this.isPVPMode = (mode === 'pvp');
-
-        const pvpMenu = document.getElementById('pvp-menu');
-        const pvpWaiting = document.getElementById('pvp-waiting');
-        const modePVE = document.getElementById('mode-pve');
-        const modePVP = document.getElementById('mode-pvp');
-
-        // Update points based on mode
-        this.totalPoints = this.getStartingPoints();
-        this.remainingPoints = this.totalPoints;
-
-        // Reset unit counts when switching modes
-        this.resetUnitCounts();
-        this.placedUnits = []; // Should already be empty but just in case
-
-        // Update UI
-        document.getElementById('points-remaining').textContent = this.remainingPoints;
-        document.getElementById('points-remaining').parentElement.innerHTML =
-            `💰 Points: <span id="points-remaining">${this.remainingPoints}</span>/${this.totalPoints}`;
-
-        // Reset all unit count displays
-        for (const type of Object.keys(this.unitCounts)) {
-            const el = document.getElementById(`count-${type}`);
-            if (el) el.textContent = '0';
-        }
-        this.updatePointsDisplay();
-
-        if (this.isPVPMode) {
-            pvpMenu.style.display = 'block';
-            modePVP.style.background = '#4a7c59';
-            modePVE.style.background = '#5D4E3E';
-        } else {
-            pvpMenu.style.display = 'none';
-            pvpWaiting.style.display = 'none';
-            modePVE.style.background = '#4a7c59';
-            modePVP.style.background = '#5D4E3E';
-        }
-    }
-
-    async createPVPSession() {
-        try {
-            if (window.loadVPScenes) await window.loadVPScenes();
-
-            const { PVPManager } = await import(`./PVPManager.js?v=${Date.now()}`);
-            this.pvpManager = new PVPManager(this);
-
-            // Set up manual signaling callbacks
-            this.pvpManager.onManualCodeReady = (code) => {
-                this._showManualSignalingUI(code, 'host');
-            };
-            this.pvpManager.onConnected = () => {
-                this._onPVPConnected();
-            };
-
-            const sessionKey = await this.pvpManager.createSession();
-
-            // If not using manual signaling, show regular waiting UI
-            if (!this.pvpManager.useManualSignaling) {
-                this._showSessionInfo(sessionKey);
-                document.getElementById('pvp-menu').style.display = 'none';
-                document.getElementById('pvp-waiting').style.display = 'block';
-                document.getElementById('pvp-session-key').textContent = sessionKey;
-                document.getElementById('pvp-assigned-side').textContent = 'LEFT';
-                document.getElementById('pvp-assigned-side').style.color = '#4a7cd9';
-            }
-            // If manual signaling, the callback will handle the UI
-
-        } catch (error) {
-            alert('Failed to create session: ' + error.message);
-        }
-    }
-
-    _showManualSignalingUI(code, role) {
-        // Hide other UI
-        document.getElementById('mode-selector').style.display = 'none';
-        document.getElementById('pvp-menu').style.display = 'none';
-        document.getElementById('pvp-waiting').style.display = 'none';
-        document.getElementById('pvp-session-info').style.display = 'none';
-
-        // Create manual signaling UI
-        let existing = document.getElementById('manual-signaling-ui');
-        if (existing) existing.remove();
-
-        const div = document.createElement('div');
-        div.id = 'manual-signaling-ui';
-        div.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(26, 28, 30, 0.98);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            z-index: 4000; color: #E3D5B8;
-            padding: 20px;
-            box-sizing: border-box;
-        `;
-
-        if (role === 'host') {
-            div.innerHTML = `
-                <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
-                <h2 style="color: #A68966; margin-bottom: 10px;">Manual Connection</h2>
-                <p style="color: #8B7355; margin-bottom: 20px; max-width: 500px; text-align: center;">
-                    Firebase is unavailable. Using manual signaling.<br>
-                    Copy this code and send it to your opponent:
-                </p>
-                <div style="background: #2D241E; border: 2px solid #A68966; border-radius: 8px; padding: 15px; max-width: 90%; word-break: break-all;">
-                    <textarea id="manual-offer-code" readonly style="
-                        background: #1A1C1E; color: #4CAF50; font-family: monospace;
-                        font-size: 12px; padding: 10px; border: 1px solid #4a4a4a;
-                        border-radius: 4px; width: 500px; max-width: 100%; height: 120px;
-                        resize: none; box-sizing: border-box;
-                    ">${code}</textarea>
-                </div>
-                <button onclick="window.gameScene._copyManualCode('manual-offer-code')" 
-                        style="margin-top: 15px; padding: 10px 20px; background: #A68966; border: none; 
-                               color: #1A1C1E; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    📋 Copy Code
-                </button>
-                <p style="color: #8B7355; margin-top: 30px; margin-bottom: 10px;">
-                    Then paste your opponent's response code here:
-                </p>
-                <textarea id="manual-answer-input" placeholder="Paste opponent's code here..." style="
-                    background: #1A1C1E; color: #E3D5B8; font-family: monospace;
-                    font-size: 12px; padding: 10px; border: 1px solid #4a4a4a;
-                    border-radius: 4px; width: 500px; max-width: 100%; height: 120px;
-                    resize: none; box-sizing: border-box; margin-bottom: 15px;
-                "></textarea>
-                <button onclick="window.gameScene._submitManualAnswer()" 
-                        style="padding: 12px 30px; background: #4a7cd9; border: none; 
-                               color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    Connect
-                </button>
-                <button onclick="window.gameScene._cancelManualSignaling()" 
-                        style="margin-top: 20px; padding: 10px 20px; background: transparent; border: 1px solid #9E4A4A; 
-                               color: #9E4A4A; border-radius: 4px; cursor: pointer;">
-                    Cancel
-                </button>
-            `;
-        } else if (role === 'guest') {
-            div.innerHTML = `
-                <div style="font-size: 48px; margin-bottom: 20px;">📋</div>
-                <h2 style="color: #A68966; margin-bottom: 10px;">Manual Connection</h2>
-                <p style="color: #4CAF50; margin-bottom: 20px; font-weight: bold;">
-                    ✓ Connected! Send this response code back to the host:
-                </p>
-                <div style="background: #2D241E; border: 2px solid #4CAF50; border-radius: 8px; padding: 15px; max-width: 90%; word-break: break-all;">
-                    <textarea id="manual-answer-code" readonly style="
-                        background: #1A1C1E; color: #4CAF50; font-family: monospace;
-                        font-size: 12px; padding: 10px; border: 1px solid #4a4a4a;
-                        border-radius: 4px; width: 500px; max-width: 100%; height: 120px;
-                        resize: none; box-sizing: border-box;
-                    ">${code}</textarea>
-                </div>
-                <button onclick="window.gameScene._copyManualCode('manual-answer-code')" 
-                        style="margin-top: 15px; padding: 10px 20px; background: #A68966; border: none; 
-                               color: #1A1C1E; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    📋 Copy Response
-                </button>
-                <p style="color: #8B7355; margin-top: 20px;">
-                    Waiting for host to complete connection...
-                </p>
-                <div style="margin-top: 20px; color: #ff9800;">
-                    ⏳ Establishing P2P connection...
-                </div>
-            `;
-        }
-
-        document.body.appendChild(div);
-    }
-
-    _copyManualCode(textareaId) {
-        const textarea = document.getElementById(textareaId);
-        textarea.select();
-        document.execCommand('copy');
-
-        // Visual feedback
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => btn.textContent = originalText, 1500);
-    }
-
-    async _submitManualAnswer() {
-        const answerCode = document.getElementById('manual-answer-input').value.trim();
-        if (!answerCode) {
-            alert('Please paste the response code from your opponent');
-            return;
-        }
-
-        try {
-            await this.pvpManager.completeManualConnection(answerCode);
-            // Connection will establish, onConnected callback will handle next steps
-        } catch (error) {
-            alert('Failed to connect: ' + error.message);
-        }
-    }
-
-    _cancelManualSignaling() {
-        if (this.pvpManager) {
-            this.pvpManager.disconnect();
-        }
-
-        const ui = document.getElementById('manual-signaling-ui');
-        if (ui) ui.remove();
-
-        document.getElementById('mode-selector').style.display = 'flex';
-    }
-
-    _onPVPConnected() {
-        // Hide manual signaling UI if present
-        const manualUI = document.getElementById('manual-signaling-ui');
-        if (manualUI) {
-            manualUI.remove();
-        }
-
-        // Show PVP session info and let user continue with army selection
-        // The confirmPlacement() function will handle transition to PVPMatchScene
-        document.getElementById('pvp-waiting').style.display = 'none';
-        document.getElementById('pvp-session-info').style.display = 'block';
-        document.getElementById('pvp-active-key').textContent = this.pvpManager.getSessionKey();
-    }
-
-    _showAssignedSide(side) {
-
-        const sideInfo = document.getElementById('pvp-side-info');
-        const sideText = document.getElementById('pvp-assigned-side');
-
-        if (sideInfo && sideText) {
-            sideInfo.style.display = 'block';
-            sideText.textContent = side.toUpperCase();
-            sideText.style.color = side === 'left' ? '#4a7cd9' : '#d94a4a';
-        }
-    }
-
-    _showSessionInfo(sessionKey) {
-        // Hide mode selector and menu
-        document.getElementById('mode-selector').style.display = 'none';
-        document.getElementById('pvp-menu').style.display = 'none';
-
-        // Show session info
-        const sessionInfo = document.getElementById('pvp-session-info');
-        sessionInfo.style.display = 'block';
-        document.getElementById('pvp-active-key').textContent = sessionKey;
-    }
-
-    async joinPVPSession() {
-        const keyInput = document.getElementById('pvp-join-key');
-        const sessionKey = keyInput.value.trim();
-
-        // Allow both short keys (Firebase) and long codes (manual)
-        if (!sessionKey) {
-            alert('Please enter a session key or connection code');
-            return;
-        }
-
-        try {
-            if (window.loadVPScenes) await window.loadVPScenes();
-
-            const { PVPManager } = await import(`./PVPManager.js?v=${Date.now()}`);
-            this.pvpManager = new PVPManager(this);
-
-            // Set up manual signaling callback for guest
-            this.pvpManager.onManualAnswerReady = (answerCode) => {
-                this._showManualSignalingUI(answerCode, 'guest');
-            };
-            this.pvpManager.onConnected = () => {
-                this._onPVPConnected();
-            };
-
-            await this.pvpManager.joinSession(sessionKey);
-
-            // If not using manual signaling, show regular UI
-            if (!this.pvpManager.useManualSignaling) {
-                this._showSessionInfo(sessionKey);
-                document.getElementById('pvp-assigned-side').textContent = 'RIGHT';
-                document.getElementById('pvp-assigned-side').style.color = '#d94a4a';
-            }
-            // If manual signaling, the callback will show the answer code UI
-
-        } catch (error) {
-            alert(error.message || 'Failed to join session. Check the key and try again.');
-        }
-    }
-
-    leavePVP() {
-        if (this.pvpManager) {
-            this.pvpManager.disconnect();
-        }
-
-        // Reset UI
-        document.getElementById('mode-selector').style.display = 'flex';
-        document.getElementById('pvp-session-info').style.display = 'none';
-        document.getElementById('pvp-menu').style.display = 'none';
-        document.getElementById('pvp-waiting').style.display = 'none';
-
-        // Reset mode
-        this.setGameMode('pve');
-    }
-
-    copySessionKey(event) {
-        const key = document.getElementById('pvp-session-key').textContent;
-        navigator.clipboard.writeText(key).then(() => {
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Copied!';
-            setTimeout(() => btn.textContent = originalText, 1500);
+        this.scene.start('BattleScene', {
+            placedUnits: finalPlacement,
+            battleNumber: 1
         });
     }
+
 }

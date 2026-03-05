@@ -1,5 +1,5 @@
 // ============================================
-// BASE BATTLE SCENE - Shared logic for PVE and PVP
+// BASE BATTLE SCENE - Shared logic for combat
 // ============================================
 
 import { GridSystem } from './InputHandler.js';
@@ -11,7 +11,7 @@ import { CONFIG } from './GameConfig.js';
 /**
  * BaseBattleScene - Abstract base class for all battle modes.
  * Contains shared logic: grid, units, combat, spells, UI, input.
- * Subclasses must implement: nextTurn(), isPlayerTurn(), syncAction()
+ * Subclasses must implement: nextTurn(), isPlayerTurn()
  */
 export class BaseBattleScene extends Phaser.Scene {
     constructor(config) {
@@ -42,7 +42,6 @@ export class BaseBattleScene extends Phaser.Scene {
     /**
      * Called when it's time to advance to the next turn
      * PVE: Use TurnSystem
-     * PVP: Wait for opponent or allow player to end turn
      */
     nextTurn() {
         throw new Error('nextTurn() must be implemented by subclass');
@@ -51,20 +50,11 @@ export class BaseBattleScene extends Phaser.Scene {
     /**
      * Check if it's currently the local player's turn
      * PVE: Check TurnSystem.currentUnit.isPlayer
-     * PVP: Check currentTurn === playerNumber
      */
     isPlayerTurn() {
         throw new Error('isPlayerTurn() must be implemented by subclass');
     }
 
-    /**
-     * Sync an action to the opponent (if applicable)
-     * PVE: No-op (local only)
-     * PVP: Send via WebRTC
-     */
-    syncAction(action) {
-        // Default: no-op for PVE
-    }
 
     // ============================================
     // COMMON SETUP
@@ -118,7 +108,6 @@ export class BaseBattleScene extends Phaser.Scene {
     /**
      * Create units - implemented by subclasses
      * PVE: Create player units from placedUnits, spawn enemies
-     * PVP: Create units from myArmy and opponentArmy
      */
     createUnits(data) {
         throw new Error('createUnits() must be implemented by subclass');
@@ -127,7 +116,6 @@ export class BaseBattleScene extends Phaser.Scene {
     /**
      * Start the battle - implemented by subclasses
      * PVE: Initialize TurnSystem
-     * PVP: Show turn indicator, wait for both players ready
      */
     startBattle() {
         throw new Error('startBattle() must be implemented by subclass');
@@ -235,7 +223,6 @@ export class BaseBattleScene extends Phaser.Scene {
     /**
      * Get the owner value for the local player
      * PVE: true (isPlayer)
-     * PVP: playerNumber (1 or 2)
      */
     getPlayerOwner() {
         throw new Error('getPlayerOwner() must be implemented by subclass');
@@ -285,8 +272,6 @@ export class BaseBattleScene extends Phaser.Scene {
 
         unit.hasMoved = true;
 
-        // Sync for PVP
-        this.syncAction({ type: 'move', fromX, fromY, toX: tx, toY: ty });
 
         this.deselectUnit();
 
@@ -388,15 +373,6 @@ export class BaseBattleScene extends Phaser.Scene {
             }
         });
 
-        // Sync for PVP
-        this.syncAction({
-            type: 'attack',
-            attackerX: attacker.gridX,
-            attackerY: attacker.gridY,
-            targetX: defender.gridX,
-            targetY: defender.gridY,
-            damage: attacker.damage
-        });
 
         this.deselectUnit();
     }
@@ -441,15 +417,6 @@ export class BaseBattleScene extends Phaser.Scene {
             }
         });
 
-        // Sync for PVP
-        this.syncAction({
-            type: 'ranged_attack',
-            attackerX: attacker.gridX,
-            attackerY: attacker.gridY,
-            targetX: defender.gridX,
-            targetY: defender.gridY,
-            damage: attacker.damage
-        });
 
         this.deselectUnit();
     }
@@ -497,15 +464,6 @@ export class BaseBattleScene extends Phaser.Scene {
         this.mana -= spell.manaCost;
         this.uiManager.updateManaDisplay();
 
-        // Sync for PVP
-        this.syncAction({
-            type: 'spell',
-            spell: spell.name,
-            casterX: caster.gridX,
-            casterY: caster.gridY,
-            targetX: x,
-            targetY: y
-        });
     }
 
     // ============================================

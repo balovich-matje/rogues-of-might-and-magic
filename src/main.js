@@ -23,28 +23,6 @@ const config = {
 // Global game reference
 let game = null;
 
-// Dynamically load PVP scenes only when needed
-let pvpScenesLoaded = false;
-async function loadVPScenes() {
-    if (pvpScenesLoaded) return;
-    if (!window.game) {
-
-        return;
-    }
-
-    const { PVPMatchScene } = await import('./PVPMatchScene.js?v=' + Date.now());
-    const { PVPBattleScene } = await import('./PVPBattleScene.js?v=' + Date.now());
-
-    window.game.scene.add('PVPMatchScene', PVPMatchScene);
-    window.game.scene.add('PVPBattleScene', PVPBattleScene);
-
-    pvpScenesLoaded = true;
-
-}
-
-// Expose load function globally for PreGameScene
-window.loadVPScenes = loadVPScenes;
-
 // Initialize the game when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     game = new Phaser.Game(config);
