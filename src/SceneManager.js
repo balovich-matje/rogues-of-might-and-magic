@@ -232,16 +232,19 @@ export class BattleScene extends Phaser.Scene {
 
         // Keyboard controls
         this.input.keyboard.on('keydown-S', () => {
+            if (this.victoryShown) return;
             this.openSpellBook();
         });
 
         this.input.keyboard.on('keydown-E', () => {
+            if (this.victoryShown) return;
             if (this.turnSystem.currentUnit && this.turnSystem.currentUnit.isPlayer) {
                 this.endTurn();
             }
         });
 
         this.input.keyboard.on('keydown-U', () => {
+            if (this.victoryShown) return;
             if (this.turnSystem.currentUnit && this.turnSystem.currentUnit.isPlayer) {
                 const abilityBtn = document.getElementById('unit-ability-btn');
                 if (abilityBtn && !abilityBtn.disabled) {
@@ -251,6 +254,7 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.input.keyboard.on('keydown-ESC', () => {
+            if (this.victoryShown) return;
             // Check if spellbook modal is open - close it
             const spellbookModal = document.getElementById('spellbook-modal');
             if (spellbookModal && !spellbookModal.classList.contains('hidden')) {
