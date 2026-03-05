@@ -151,6 +151,10 @@ export class BattleScene extends Phaser.Scene {
                     if (unitData.statModifiers.hasPiercing) unit.hasPiercing = true;
                     if (unitData.statModifiers.hasBackstab) unit.hasBackstab = true;
 
+                    // Restore mythic buffs
+                    if (unitData.statModifiers.hasDivineRetribution) unit.hasDivineRetribution = true;
+                    if (unitData.statModifiers.hasArcaneFocus) unit.hasArcaneFocus = true;
+
                     unit.updateHealthBar();
                 }
 
