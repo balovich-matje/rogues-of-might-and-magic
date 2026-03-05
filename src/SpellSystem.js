@@ -256,8 +256,8 @@ export class SpellSystem {
         const damage = this.getSpellDamage(spell.power);
         for (const unit of targets) {
             this.scene.time.delayedCall(200, () => {
-                unit.takeSpellDamage(damage);
-                this.scene.uiManager.showDamageText(unit, damage);
+                const actualSpellDmg = unit.takeSpellDamage(damage);
+                this.scene.uiManager.showDamageText(unit, actualSpellDmg);
                 this.scene.checkVictoryCondition();
             });
         }
@@ -282,10 +282,10 @@ export class SpellSystem {
         const damage = this.getSpellDamage(spell.power);
         for (const unit of targets) {
             this.scene.time.delayedCall(200, () => {
-                unit.takeSpellDamage(damage);
+                const actualIceDmg = unit.takeSpellDamage(damage);
                 unit.iceSlowRounds = 2;
                 unit.moveRange = Math.max(1, unit.moveRange - 1);
-                this.scene.uiManager.showDamageText(unit, damage);
+                this.scene.uiManager.showDamageText(unit, actualIceDmg);
                 this.scene.uiManager.showBuffText(unit, 'SLOWED!', '#5B6B8B');
                 this.scene.checkVictoryCondition();
             });
@@ -297,8 +297,8 @@ export class SpellSystem {
 
         const damage = this.getSpellDamage(spell.power);
         this.scene.time.delayedCall(200, () => {
-            unit.takeSpellDamage(damage);
-            this.scene.uiManager.showDamageText(unit, damage);
+            const actualSingleDmg = unit.takeSpellDamage(damage);
+            this.scene.uiManager.showDamageText(unit, actualSingleDmg);
             this.scene.checkVictoryCondition();
         });
     }
@@ -381,8 +381,8 @@ export class SpellSystem {
         targets.forEach((unit, index) => {
             this.scene.time.delayedCall(index * 300, () => {
                 this.createLightningEffect(unit);
-                unit.takeSpellDamage(damage);
-                this.scene.uiManager.showDamageText(unit, damage);
+                const actualChainDmg = unit.takeSpellDamage(damage);
+                this.scene.uiManager.showDamageText(unit, actualChainDmg);
                 this.scene.checkVictoryCondition();
             });
         });

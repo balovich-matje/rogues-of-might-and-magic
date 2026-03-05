@@ -670,8 +670,8 @@ export class BattleScene extends Phaser.Scene {
                 if (attacker.hasCleave && !isSecondStrike) {
                     this.performCleaveAttack(attacker, defender, damage);
                 } else if (!attacker.hasCleave) {
-                    defender.takeDamage(damage, false, attacker);
-                    this.uiManager.showDamageText(defender, damage);
+                    const actualDmg = defender.takeDamage(damage, false, attacker);
+                    this.uiManager.showDamageText(defender, actualDmg);
 
                     this.tweens.add({
                         targets: defender.sprite,
@@ -744,8 +744,8 @@ export class BattleScene extends Phaser.Scene {
 
     performCleaveAttack(attacker, mainTarget, fullDamage) {
         // Deal full damage to main target
-        mainTarget.takeDamage(fullDamage, false, attacker);
-        this.uiManager.showDamageText(mainTarget, fullDamage);
+        const actualCleave = mainTarget.takeDamage(fullDamage, false, attacker);
+        this.uiManager.showDamageText(mainTarget, actualCleave);
         this.uiManager.showBuffText(attacker, 'CLEAVE!', '#D4A574');
 
         this.tweens.add({
@@ -764,8 +764,8 @@ export class BattleScene extends Phaser.Scene {
             if (enemy === mainTarget) return;
             const dist = Math.abs(enemy.gridX - mainTarget.gridX) + Math.abs(enemy.gridY - mainTarget.gridY);
             if (dist <= 1) { // Adjacent in 3x3 area (including diagonals)
-                enemy.takeDamage(cleaveDamage, false, attacker);
-                this.uiManager.showDamageText(enemy, cleaveDamage);
+                const actualCleaveSplash = enemy.takeDamage(cleaveDamage, false, attacker);
+                this.uiManager.showDamageText(enemy, actualCleaveSplash);
                 this.tweens.add({
                     targets: enemy.sprite,
                     alpha: 0.3,
@@ -804,8 +804,8 @@ export class BattleScene extends Phaser.Scene {
                 if (retaliator.hasCleave) {
                     this.performCleaveAttack(retaliator, target, damage);
                 } else {
-                    target.takeDamage(damage, false, retaliator);
-                    this.uiManager.showDamageText(target, damage);
+                    const actualRetDmg = target.takeDamage(damage, false, retaliator);
+                    this.uiManager.showDamageText(target, actualRetDmg);
 
                     this.tweens.add({
                         targets: target.sprite,
@@ -864,8 +864,8 @@ export class BattleScene extends Phaser.Scene {
                 }
                 else {
                     const damage = Math.floor(attacker.damage * 0.8 * attacker.blessValue);
-                    defender.takeDamage(damage, true, attacker);
-                    this.uiManager.showDamageText(defender, damage);
+                    const actualRangedDmg = defender.takeDamage(damage, true, attacker);
+                    this.uiManager.showDamageText(defender, actualRangedDmg);
 
                     this.tweens.add({
                         targets: defender.sprite,
@@ -892,8 +892,8 @@ export class BattleScene extends Phaser.Scene {
         const damage = Math.floor(attacker.damage * 0.8 * attacker.blessValue);
 
         // Hit main target
-        mainTarget.takeDamage(damage, true, attacker);
-        this.uiManager.showDamageText(mainTarget, damage);
+        const actualRicochetDmg = mainTarget.takeDamage(damage, true, attacker);
+        this.uiManager.showDamageText(mainTarget, actualRicochetDmg);
         this.uiManager.showBuffText(attacker, 'RICOCHET!', '#6B8B5B');
 
         this.tweens.add({
@@ -932,8 +932,8 @@ export class BattleScene extends Phaser.Scene {
                         duration: 150,
                         onComplete: () => {
                             bounceArrow.destroy();
-                            enemy.takeDamage(bounceDamage, true, attacker);
-                            this.uiManager.showDamageText(enemy, bounceDamage);
+                            const actualBounceDmg = enemy.takeDamage(bounceDamage, true, attacker);
+                            this.uiManager.showDamageText(enemy, actualBounceDmg);
                             this.tweens.add({
                                 targets: enemy.sprite,
                                 alpha: 0.3,
@@ -987,8 +987,8 @@ export class BattleScene extends Phaser.Scene {
                 const delay = hitCount * 100;
 
                 this.time.delayedCall(delay, () => {
-                    enemy.takeDamage(baseDamage, true, attacker);
-                    this.uiManager.showDamageText(enemy, baseDamage);
+                    const actualPierceDmg = enemy.takeDamage(baseDamage, true, attacker);
+                    this.uiManager.showDamageText(enemy, actualPierceDmg);
                     this.tweens.add({
                         targets: enemy.sprite,
                         alpha: 0.3,

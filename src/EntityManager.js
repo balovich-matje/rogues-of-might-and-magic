@@ -137,6 +137,7 @@ export class Unit {
             amount = Math.floor(amount * 1.5);
         }
 
+        const actualDamage = Math.min(amount, this.health); // Can't deal more damage than remaining health
         this.health = Math.max(0, this.health - amount);
         this.updateHealthBar();
 
@@ -161,7 +162,7 @@ export class Unit {
             this.killedBy = attacker;
             this.die(this.scene);
         }
-        return this.health > 0;
+        return amount; // Return actual mitigated damage for floating text
     }
 
     heal(amount) {
@@ -185,6 +186,7 @@ export class Unit {
         if (this.health <= 0) {
             this.die(this.scene);
         }
+        return amount; // Return actual mitigated damage for floating text
     }
 
     die(scene) {

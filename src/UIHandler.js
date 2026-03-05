@@ -147,19 +147,56 @@ export class UIManager {
         });
     }
 
-    // Show damage number
+    // Show damage number with color gradient based on damage amount
     showDamageText(unit, damage) {
+        // Determine color based on damage thresholds
+        let color;
+        if (damage >= 200) {
+            color = '#ff2222'; // Red for massive damage
+        } else if (damage >= 100) {
+            // Lerp from orange to red (100-199)
+            const t = (damage - 100) / 100;
+            const r = 255;
+            const g = Math.floor(140 * (1 - t) + 34 * t);
+            const b = Math.floor(0 * (1 - t) + 34 * t);
+            color = `rgb(${r},${g},${b})`;
+        } else if (damage >= 50) {
+            // Lerp from yellow to orange (50-99)
+            const t = (damage - 50) / 50;
+            const r = 255;
+            const g = Math.floor(220 * (1 - t) + 140 * t);
+            const b = Math.floor(50 * (1 - t));
+            color = `rgb(${r},${g},${b})`;
+        } else {
+            // Lerp from white to yellow (0-49)
+            const t = Math.min(damage, 49) / 49;
+            const r = 255;
+            const g = Math.floor(255 * (1 - t) + 220 * t);
+            const b = Math.floor(255 * (1 - t) + 50 * t);
+            color = `rgb(${r},${g},${b})`;
+        }
+
+        const fontSize = Math.min(24 + Math.floor(damage / 25) * 2, 36);
+
         const text = this.scene.add.text(
             unit.sprite.x, unit.sprite.y - 40,
             `-${damage}`,
-            { fontSize: '24px', color: '#ff0000', fontStyle: 'bold' }
+            {
+                fontSize: `${fontSize}px`,
+                color: color,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3,
+                shadow: { offsetX: 1, offsetY: 1, color: '#000000', blur: 4, fill: true }
+            }
         ).setOrigin(0.5);
 
         this.scene.tweens.add({
             targets: text,
-            y: text.y - 40,
+            y: text.y - 50,
             alpha: 0,
-            duration: 800,
+            duration: 1200,
+            ease: 'Power2',
             onComplete: () => text.destroy()
         });
     }
