@@ -20,6 +20,11 @@
 
     <!-- Main Game Layout -->
     <div id="game-layout">
+        <!-- Left Panel Toggle -->
+        <button id="left-toggle" class="panel-toggle left" onclick="toggleLeftPanel()" title="Toggle Hero Panel">
+            🔮
+        </button>
+
         <!-- Left Side Panel -->
         <div id="left-panel" class="hidden">
             <!-- Mana Display -->
@@ -48,6 +53,11 @@
 
         <!-- Game Container (Center) -->
         <div id="game-container"></div>
+
+        <!-- Right Panel Toggle -->
+        <button id="right-toggle" class="panel-toggle right" onclick="toggleRightPanel()" title="Toggle Unit Panel">
+            ⚔️
+        </button>
 
         <!-- Right Side Panel -->
         <div id="right-panel" class="hidden">
@@ -447,6 +457,23 @@
             <button class="spellbook-close" onclick="gameScene.closeSpellBook()">Close</button>
         </div>
     </div>
+
+    <!-- Panel Toggle Script -->
+    <script>
+        function toggleLeftPanel() {
+            const panel = document.getElementById('left-panel');
+            const toggle = document.getElementById('left-toggle');
+            panel.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        function toggleRightPanel() {
+            const panel = document.getElementById('right-panel');
+            const toggle = document.getElementById('right-toggle');
+            panel.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+    </script>
 
     <!-- Main entry point as ES6 module -->
     <script type="module" src="src/main.js"></script>
