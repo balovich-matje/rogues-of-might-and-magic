@@ -511,10 +511,172 @@ body {
 /* Pre-game screen styles */
 #pregame-screen {
     background: rgba(26, 28, 30, 0.98);
+    padding: 20px;
 }
 
 #pregame-screen h2 {
     color: #A68966;
+}
+
+/* Two-step pregame layout */
+.pregame-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+.pregame-step.hidden {
+    display: none !important;
+}
+
+/* Map Selection Buttons */
+.map-select-btn {
+    width: 280px;
+    padding: 25px;
+    background: #2D241E;
+    border: 3px solid #5D4E3E;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.map-select-btn:hover {
+    border-color: #A68966;
+    background: #3D342E;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.map-select-btn.selected {
+    border-color: #4a7c59;
+    box-shadow: 0 0 20px rgba(74, 124, 89, 0.4);
+}
+
+.map-preview {
+    font-size: 64px;
+    line-height: 1;
+}
+
+.map-name {
+    color: #A68966;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.map-stats {
+    color: #B8A896;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* Compact Unit Grid for Step 2 */
+.compact-unit-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    max-width: 1200px;
+    width: 100%;
+    padding: 0 20px;
+}
+
+@media (max-width: 1200px) {
+    .compact-unit-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .compact-unit-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.unit-card.compact {
+    background: #2D241E;
+    border: 2px solid #5D4E3E;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.unit-card.compact.specialist {
+    border-color: #8B5B9B;
+    background: linear-gradient(135deg, #2D241E 0%, #302438 100%);
+}
+
+.unit-card.compact.legendary {
+    border-color: #ff8c00;
+    background: linear-gradient(135deg, #2D241E 0%, #3D2814 100%);
+}
+
+.unit-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.unit-emoji {
+    font-size: 24px;
+}
+
+.unit-name {
+    color: #A68966;
+    font-weight: bold;
+    font-size: 14px;
+    flex: 1;
+}
+
+.unit-card.compact.specialist .unit-name {
+    color: #9B6BAB;
+}
+
+.unit-card.compact.legendary .unit-name {
+    color: #ff8c00;
+}
+
+.unit-cost {
+    color: #E3D5B8;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.unit-stats {
+    color: #B8A896;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.unit-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.unit-controls .spell-button {
+    padding: 4px 12px;
+    font-size: 14px;
+    min-width: 32px;
+}
+
+.unit-count {
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 25px;
+    color: #A68966;
+    text-align: center;
 }
 
 /* ============================================

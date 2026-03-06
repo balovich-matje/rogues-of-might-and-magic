@@ -138,279 +138,186 @@
         "></div>
     </div>
 
-    <!-- Pre-game Army Selection -->
+    <!-- Pre-game: Two Step Process -->
     <div id="pregame-screen" class="victory-screen">
-        <h1 style="color: #A68966; margin-bottom: 10px;">⚔️ Steel and Sigils 🛡️</h1>
-        <h2 style="color: #A68966;">⚔️ Army Selection ⚔️</h2>
+        <!-- Step 1: Map Selection -->
+        <div id="step-1-map" class="pregame-step">
+            <h1 style="color: #A68966; margin-bottom: 30px;">⚔️ Steel and Sigils 🛡️</h1>
+            <h2 style="color: #A68966; margin-bottom: 40px;">Choose Your Battlefield</h2>
 
-        <!-- Stage Selection -->
-        <div style="margin-bottom: 20px;">
-            <div id="stage-selector"
-                style="display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 15px;">
-                <button id="stage-forest" class="spell-button stage-btn active" data-stage="forest" style="background: #4a7c59;">
-                    🌲 Whispering Woods
+            <div style="display: flex; gap: 30px; justify-content: center; align-items: stretch; margin-bottom: 40px;">
+                <!-- Forest Map Option -->
+                <button class="map-select-btn" onclick="selectMap('forest')" data-stage="forest">
+                    <div class="map-preview forest-preview">🌲</div>
+                    <div class="map-name">Whispering Woods</div>
+                    <div class="map-stats">
+                        10×8 Grid<br>
+                        1000 Points<br>
+                        Grass Terrain
+                    </div>
                 </button>
-                <button id="stage-ruins" class="spell-button stage-btn" data-stage="ruins" style="background: #2D241E;">
-                    🏰 Ruins of a Castle
+
+                <!-- Ruins Map Option -->
+                <button class="map-select-btn" onclick="selectMap('ruins')" data-stage="ruins">
+                    <div class="map-preview ruins-preview">🏰</div>
+                    <div class="map-name">Ruins of a Castle</div>
+                    <div class="map-stats">
+                        15×15 Grid<br>
+                        1700 Points<br>
+                        Dirt & Walls
+                    </div>
                 </button>
             </div>
         </div>
 
-        <p style="color: #E3D5B8; margin-bottom: 10px; font-size: 18px;">Spend your points wisely!</p>
-        <div class="mana-display" style="margin-bottom: 20px;">
-            💰 Points: <span id="points-remaining">1000</span>/<span id="points-total">1000</span>
-        </div>
+        <!-- Step 2: Army Selection (Hidden initially) -->
+        <div id="step-2-army" class="pregame-step hidden">
+            <h2 style="color: #A68966; margin-bottom: 10px;">⚔️ Build Your Army ⚔️</h2>
+            <p style="color: #E3D5B8; margin-bottom: 10px; font-size: 16px;">Spend your points wisely!</p>
+            <div class="mana-display" style="margin-bottom: 15px;">
+                💰 Points: <span id="points-remaining">1000</span>/<span id="points-total">1000</span>
+            </div>
 
-        <div
-            style="display: flex; flex-direction: column; gap: 20px; align-items: center; max-width: 1000px; width: 100%;">
-            <!-- Common Units -->
-            <div class="rarity-section">
-                <div class="rarity-title">📜 Common Units</div>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-                    <div class="spell-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">⚔️</div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 3px; font-size: 14px;">Knight
-                            </div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 100 | DMG: 25<br>MOV: 4 | INIT: 12
-                            </div>
-                            <div style="color: #8B7355; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                🛡️ -50% ranged dmg
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 200
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('KNIGHT', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-KNIGHT"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('KNIGHT', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
+            <!-- Compact Unit Grid -->
+            <div class="compact-unit-grid">
+                <!-- Row 1: Common & Specialist -->
+                <div class="unit-card compact" data-type="KNIGHT">
+                    <div class="unit-header">
+                        <span class="unit-emoji">⚔️</span>
+                        <span class="unit-name">Knight</span>
+                        <span class="unit-cost">💰200</span>
                     </div>
+                    <div class="unit-stats">HP:100 DMG:25 MOV:4 INIT:12</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('KNIGHT', -1)">-</button>
+                        <span id="count-KNIGHT" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('KNIGHT', 1)">+</button>
+                    </div>
+                </div>
 
-                    <div class="spell-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🏹</div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 3px; font-size: 14px;">Archer
-                            </div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 60 | DMG: 35<br>MOV: 2 | RNG: 6
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 300
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('ARCHER', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-ARCHER"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('ARCHER', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
+                <div class="unit-card compact" data-type="ARCHER">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🏹</span>
+                        <span class="unit-name">Archer</span>
+                        <span class="unit-cost">💰300</span>
+                    </div>
+                    <div class="unit-stats">HP:60 DMG:35 MOV:2 RNG:6</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('ARCHER', -1)">-</button>
+                        <span id="count-ARCHER" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('ARCHER', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact specialist" data-type="WIZARD">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🧙</span>
+                        <span class="unit-name">Wizard</span>
+                        <span class="unit-cost">💰500</span>
+                    </div>
+                    <div class="unit-stats">HP:40 DMG:45 MOV:2 🔮+2 Mana</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('WIZARD', -1)">-</button>
+                        <span id="count-WIZARD" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('WIZARD', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact specialist" data-type="CLERIC">
+                    <div class="unit-header">
+                        <span class="unit-emoji">✝️</span>
+                        <span class="unit-name">Cleric</span>
+                        <span class="unit-cost">💰500</span>
+                    </div>
+                    <div class="unit-stats">HP:80 DMG:15 MOV:2 💚Heal</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('CLERIC', -1)">-</button>
+                        <span id="count-CLERIC" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('CLERIC', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact specialist" data-type="ROGUE">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🗡️</span>
+                        <span class="unit-name">Rogue</span>
+                        <span class="unit-cost">💰500</span>
+                    </div>
+                    <div class="unit-stats">HP:55 DMG:40 MOV:8 INIT:16 👤Hit&Run</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('ROGUE', -1)">-</button>
+                        <span id="count-ROGUE" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('ROGUE', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Legendary -->
+                <div class="unit-card compact legendary" data-type="PALADIN">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🛡️</span>
+                        <span class="unit-name">Paladin</span>
+                        <span class="unit-cost">💰800</span>
+                    </div>
+                    <div class="unit-stats">HP:150 DMG:50 🛡️-50% ranged</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('PALADIN', -1)">-</button>
+                        <span id="count-PALADIN" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('PALADIN', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact legendary" data-type="RANGER">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🎯</span>
+                        <span class="unit-name">Ranger</span>
+                        <span class="unit-cost">💰800</span>
+                    </div>
+                    <div class="unit-stats">HP:70 DMG:50 MOV:2 RNG:10</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('RANGER', -1)">-</button>
+                        <span id="count-RANGER" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('RANGER', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact legendary" data-type="BERSERKER">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🪓</span>
+                        <span class="unit-name">Berserker</span>
+                        <span class="unit-cost">💰800</span>
+                    </div>
+                    <div class="unit-stats">HP:90 DMG:50 ⚔️Bloodlust</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('BERSERKER', -1)">-</button>
+                        <span id="count-BERSERKER" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('BERSERKER', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="unit-card compact legendary" data-type="SORCERER">
+                    <div class="unit-header">
+                        <span class="unit-emoji">🔮</span>
+                        <span class="unit-name">Sorcerer</span>
+                        <span class="unit-cost">💰800</span>
+                    </div>
+                    <div class="unit-stats">HP:50 DMG:55 ✨+50% spell dmg</div>
+                    <div class="unit-controls">
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('SORCERER', -1)">-</button>
+                        <span id="count-SORCERER" class="unit-count">0</span>
+                        <button class="spell-button" onclick="gameScene.updateUnitCount('SORCERER', 1)">+</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Specialist Units -->
-            <div class="rarity-section">
-                <div class="rarity-title">✨ Specialist Units</div>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-                    <div class="spell-card specialist-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🧙</div>
-                            <div
-                                style="color: #9B6BAB; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 4px rgba(155, 107, 171, 0.4);">
-                                Wizard</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 40 | DMG: 45<br>MOV: 2 | RNG: 4
-                            </div>
-                            <div style="color: #4A729E; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                🔮 +2 Mana/turn
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 500
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('WIZARD', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-WIZARD"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('WIZARD', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="spell-card specialist-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">✝️</div>
-                            <div
-                                style="color: #9B6BAB; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 4px rgba(155, 107, 171, 0.4);">
-                                Cleric</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 80 | DMG: 15<br>MOV: 2 | RNG: 4
-                            </div>
-                            <div style="color: #6B8B5B; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                💚 +50% army healing, casts Heal
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 500
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('CLERIC', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-CLERIC"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('CLERIC', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="spell-card specialist-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🗡️</div>
-                            <div
-                                style="color: #9B6BAB; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 4px rgba(155, 107, 171, 0.4);">
-                                Rogue</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 55 | DMG: 40<br>MOV: 8 | INIT: 16
-                            </div>
-                            <div style="color: #6B5B8B; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                👤 Hit & Run
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 500
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('ROGUE', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-ROGUE"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('ROGUE', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Legendary Units -->
-            <div class="rarity-section">
-                <div class="rarity-title">⚡ Legendary Units</div>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-                    <div class="spell-card legendary-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🛡️</div>
-                            <div
-                                style="color: #ff8c00; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 6px rgba(255, 140, 0, 0.5);">
-                                Paladin</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 150 | DMG: 50<br>MOV: 4 | INIT: 9
-                            </div>
-                            <div style="color: #8B7355; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                🛡️ -50% ranged, +50% heal
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 800
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('PALADIN', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-PALADIN"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('PALADIN', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="spell-card legendary-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🎯</div>
-                            <div
-                                style="color: #ff8c00; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 6px rgba(255, 140, 0, 0.5);">
-                                Ranger</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 70 | DMG: 50<br>MOV: 2 | RNG: 10
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 800
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('RANGER', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-RANGER"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('RANGER', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="spell-card legendary-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🪓</div>
-                            <div
-                                style="color: #ff8c00; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 6px rgba(255, 140, 0, 0.5);">
-                                Berserker</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 90 | DMG: 50<br>MOV: 4 | INIT: 11
-                            </div>
-                            <div style="color: #9E5B4A; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                ⚔️ Reckless, Bloodlust
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 800
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('BERSERKER', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-BERSERKER"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('BERSERKER', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="spell-card legendary-card" style="min-width: 130px; max-width: 160px;">
-                        <div class="card-content">
-                            <div style="font-size: 36px; margin-bottom: 8px;">🔮</div>
-                            <div
-                                style="color: #ff8c00; font-weight: bold; margin-bottom: 3px; font-size: 14px; text-shadow: 0 0 6px rgba(255, 140, 0, 0.5);">
-                                Sorcerer</div>
-                            <div style="font-size: 11px; color: #B8A896; margin-bottom: 8px;">
-                                HP: 50 | DMG: 55<br>MOV: 2 | RNG: 4
-                            </div>
-                            <div style="color: #6B5B8B; font-size: 10px; margin-bottom: 8px; font-style: italic;">
-                                ✨ +50% army spell dmg, casts Fireball
-                            </div>
-                            <div style="color: #A68966; font-weight: bold; margin-bottom: 8px; font-size: 14px;">💰 800
-                            </div>
-                        </div>
-                        <div
-                            style="display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid rgba(166, 137, 102, 0.2); padding-top: 10px;">
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('SORCERER', -1)"
-                                style="padding: 4px 12px;">-</button>
-                            <span id="count-SORCERER"
-                                style="font-size: 18px; font-weight: bold; min-width: 25px; color: #A68966;">0</span>
-                            <button class="spell-button" onclick="gameScene.updateUnitCount('SORCERER', 1)"
-                                style="padding: 4px 12px;">+</button>
-                        </div>
-                    </div>
-                </div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+                <button class="spell-button" onclick="goBackToMapSelection()" style="background: #5D4E3E;">
+                    ← Back to Map
+                </button>
+                <button id="confirm-army" class="spellbook-close" onclick="gameScene.confirmArmySelection()" disabled>
+                    Confirm Army (0 units)
+                </button>
             </div>
         </div>
-
-        <button id="confirm-army" class="spellbook-close" onclick="gameScene.confirmArmySelection()" disabled>
-            Confirm Army (0 units)
-        </button>
     </div>
 
 
@@ -504,6 +411,42 @@
                 combatLogView.classList.remove('hidden');
                 toggleBtn.innerHTML = '📊 Show Initiative';
             }
+        }
+
+        // Pregame two-step navigation
+        let selectedMapId = 'forest';
+
+        function selectMap(mapId) {
+            selectedMapId = mapId;
+            
+            // Update UI to show selected map
+            document.querySelectorAll('.map-select-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.stage === mapId) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            // Update points display based on map
+            const pointsTotal = mapId === 'ruins' ? 1700 : 1000;
+            document.getElementById('points-total').textContent = pointsTotal;
+            document.getElementById('points-remaining').textContent = pointsTotal;
+
+            // Pass selection to gameScene
+            if (window.gameScene && window.gameScene.selectStage) {
+                window.gameScene.selectStage(mapId);
+            }
+
+            // Go to step 2 after a brief delay
+            setTimeout(() => {
+                document.getElementById('step-1-map').classList.add('hidden');
+                document.getElementById('step-2-army').classList.remove('hidden');
+            }, 300);
+        }
+
+        function goBackToMapSelection() {
+            document.getElementById('step-2-army').classList.add('hidden');
+            document.getElementById('step-1-map').classList.remove('hidden');
         }
     </script>
 

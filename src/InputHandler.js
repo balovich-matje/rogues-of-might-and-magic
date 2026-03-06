@@ -28,15 +28,31 @@ export class GridSystem {
         const colorA = isRuins ? CONFIG.COLORS.DIRT : CONFIG.COLORS.GRASS;
         const colorB = isRuins ? CONFIG.COLORS.DIRT_DARK : CONFIG.COLORS.GRASS_DARK;
         const tileSize = this.tileSize;
+        const padding = tileSize * 0.8; // Padding to prevent units being cut off at edges
 
-        // Create tile graphics
+        // Store padding for use in other methods
+        this.padding = padding;
+
+        // Create background rectangle to fill the padded area
+        const bgWidth = this.width * tileSize + padding * 2;
+        const bgHeight = this.height * tileSize + padding * 2;
+        const bg = this.scene.add.rectangle(
+            this.width * tileSize / 2,
+            this.height * tileSize / 2,
+            bgWidth,
+            bgHeight,
+            colorB
+        );
+        bg.setDepth(-1); // Put behind everything
+
+        // Create tile graphics with padding offset
         for (let y = 0; y < this.height; y++) {
             this.tiles[y] = [];
             for (let x = 0; x < this.width; x++) {
                 const color = (x + y) % 2 === 0 ? colorA : colorB;
                 const tile = this.scene.add.rectangle(
-                    x * tileSize + tileSize / 2,
-                    y * tileSize + tileSize / 2,
+                    x * tileSize + tileSize / 2 + padding,
+                    y * tileSize + tileSize / 2 + padding,
                     tileSize - 2,
                     tileSize - 2,
                     color
