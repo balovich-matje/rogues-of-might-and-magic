@@ -43,6 +43,7 @@ export class BattleScene extends Phaser.Scene {
         this.combatLog = [];
         this.combatLogOpen = false;
         this.currentStage = null;
+        this.tileSize = this.tileSize;
     }
 
     preload() {
@@ -71,6 +72,9 @@ export class BattleScene extends Phaser.Scene {
                 this.load.image(imageKey, template.image);
             }
         }
+
+        // Load wall/obstacle image
+        this.load.image('wall_img', 'images/obstacles/wall.png');
     }
 
     create(data) {
@@ -90,8 +94,11 @@ export class BattleScene extends Phaser.Scene {
             this.currentStage = STAGES.forest;
         }
 
-        // Initialize grid with stage dimensions
-        this.gridSystem = new GridSystem(this, this.currentStage.width, this.currentStage.height);
+        // Calculate dynamic tile size to fit map in canvas
+        this.tileSize = CONFIG.getTileSize(this.currentStage.width, this.currentStage.height);
+
+        // Initialize grid with stage dimensions and dynamic tile size
+        this.gridSystem = new GridSystem(this, this.currentStage.width, this.currentStage.height, this.tileSize);
         this.gridSystem.create();
 
         // Generate obstacles if applicable
@@ -215,14 +222,14 @@ export class BattleScene extends Phaser.Scene {
                 return;
             }
             if (this.spellSystem.activeSpell) {
-                const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
-                const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
+                const gridX = Math.floor(pointer.x / this.tileSize);
+                const gridY = Math.floor(pointer.y / this.tileSize);
                 if (gridX >= 0 && gridX < CONFIG.GRID_WIDTH && gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
                     this.spellSystem.executeSpellAt(gridX, gridY);
                 }
             } else if (this.activeUnitAbility) {
-                const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
-                const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
+                const gridX = Math.floor(pointer.x / this.tileSize);
+                const gridY = Math.floor(pointer.y / this.tileSize);
                 if (gridX >= 0 && gridX < CONFIG.GRID_WIDTH && gridY >= 0 && gridY < CONFIG.GRID_HEIGHT) {
                     this.executeUnitAbilityAt(gridX, gridY);
                 }
@@ -298,10 +305,10 @@ export class BattleScene extends Phaser.Scene {
                 if (!ally.isDead) {
                     this.gridSystem.highlightGraphics.fillStyle(0x00ff00, 0.4);
                     this.gridSystem.highlightGraphics.fillRect(
-                        ally.gridX * CONFIG.TILE_SIZE + 4,
-                        ally.gridY * CONFIG.TILE_SIZE + 4,
-                        CONFIG.TILE_SIZE - 8,
-                        CONFIG.TILE_SIZE - 8
+                        ally.gridX * this.tileSize + 4,
+                        ally.gridY * this.tileSize + 4,
+                        this.tileSize - 8,
+                        this.tileSize - 8
                     );
                 }
             });
@@ -494,10 +501,11 @@ export class BattleScene extends Phaser.Scene {
     generateObstacles() {
         if (!this.currentStage || !this.currentStage.hasObstacles) return;
 
-        // Fortress of the Fallen logic:
-        // Player area is 5x5 in the middle of 15x15 (x: 5-9, y: 5-9)
-        // Add a few impassable walls around the player starting area
+        // Ruins of a Castle logic:
+        // Player area is on the left side (x: 0-3, y: 0-15)
+        // Add impassable walls around the player starting area
         // Rules: No more than 3 cells length, max 4 wall segments total.
+        // Walls must NOT spawn inside player area (x: 0-3, any y)
 
         const playerArea = this.currentStage.playerArea;
         const wallSegments = 4;
@@ -507,30 +515,34 @@ export class BattleScene extends Phaser.Scene {
             const length = Math.floor(Math.random() * 3) + 1;
 
             // Pick a starting point near the perimeter of the player area
+            // Only spawn walls on the RIGHT side of player area (x >= playerArea.x2)
             let startX, startY;
-            const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+            const side = Math.floor(Math.random() * 3); // 0: top-right, 1: right, 2: bottom-right
 
-            if (side === 0) { // Top
-                startX = playerArea.x1 + Math.floor(Math.random() * (playerArea.x2 - playerArea.x1));
-                startY = playerArea.y1 - 1;
-            } else if (side === 1) { // Right
-                startX = playerArea.x2;
+            if (side === 0) { // Top-right area
+                startX = playerArea.x2 + Math.floor(Math.random() * 3);
+                startY = Math.floor(Math.random() * (playerArea.y2 - playerArea.y1) * 0.3);
+            } else if (side === 1) { // Right side (column 4-6)
+                startX = playerArea.x2 + Math.floor(Math.random() * 3);
                 startY = playerArea.y1 + Math.floor(Math.random() * (playerArea.y2 - playerArea.y1));
-            } else if (side === 2) { // Bottom
-                startX = playerArea.x1 + Math.floor(Math.random() * (playerArea.x2 - playerArea.x1));
-                startY = playerArea.y2;
-            } else { // Left
-                startX = playerArea.x1 - 1;
-                startY = playerArea.y1 + Math.floor(Math.random() * (playerArea.y2 - playerArea.y1));
+            } else { // Bottom-right area
+                startX = playerArea.x2 + Math.floor(Math.random() * 3);
+                startY = playerArea.y2 - Math.floor(Math.random() * (playerArea.y2 - playerArea.y1) * 0.3);
             }
 
             for (let j = 0; j < length; j++) {
                 const wallX = isHorizontal ? startX + j : startX;
                 const wallY = isHorizontal ? startY : startY + j;
 
-                // Stay within bounds and don't overwrite units (though units aren't spawned yet)
-                if (wallX >= 0 && wallX < this.gridSystem.width && wallY >= 0 && wallY < this.gridSystem.height) {
+                // Stay within bounds and NEVER place inside player area
+                const inPlayerArea = wallX >= playerArea.x1 && wallX < playerArea.x2 && 
+                                     wallY >= playerArea.y1 && wallY < playerArea.y2;
+                
+                if (!inPlayerArea && 
+                    wallX >= 0 && wallX < this.gridSystem.width && 
+                    wallY >= 0 && wallY < this.gridSystem.height) {
                     this.gridSystem.addObstacle(wallX, wallY);
+                } else {
                 }
             }
         }
@@ -808,10 +820,8 @@ export class BattleScene extends Phaser.Scene {
                 // Paladin Mythic: Divine Retribution (Melee Retaliation)
                 // Assuming it's a melee attack if the distance is 1. (Ranged attacks use performRangedAttack typically, but let's be safe)
                 const distToDefender = this.gridSystem.getDistanceBetweenUnits(attacker, defender);
-                console.log(`[Divine Retribution Check] attacker: ${attacker.type}, defender: ${defender.type}, dist: ${distToDefender}, hasMythic: ${defender.hasDivineRetribution}, defenderHealth: ${defender.health}, attackerHealth: ${attacker.health}, isSecondStrike: ${isSecondStrike}`);
 
                 if (distToDefender <= 1 && defender.hasDivineRetribution && defender.health > 0 && !isSecondStrike && attacker.health > 0) {
-                    console.log(`[Divine Retribution Triggered] ${defender.type} retaliates against ${attacker.type}!`);
                     this.time.delayedCall(200, () => {
                         this.performRetaliation(defender, attacker);
                     });
@@ -2130,7 +2140,7 @@ export class BattleScene extends Phaser.Scene {
         playerUnits.forEach(unit => {
             const card = document.createElement('div');
             card.className = 'spell-card';
-            card.style.border = '2px solid #8B6914';
+            card.style.cssText = 'border: 2px solid #8B6914; min-height: auto; padding: 10px;';
             card.innerHTML = `
                 <div style="font-size: 32px; margin-bottom: 5px;">${unit.emoji}</div>
                 <div style="color: #D4A574; font-weight: bold;">${unit.name}</div>
@@ -2326,28 +2336,74 @@ export class PreGameScene extends Phaser.Scene {
         this.placementMode = false;
         this.selectedPlacementUnit = null;
         this.currentStage = STAGES.forest; // Default
+        this.selectedStageId = 'forest';
+        this.tileSize = this.tileSize;
     }
 
     getStartingPoints() {
-        return 1000;
+        return this.currentStage.startingPoints || 1000;
     }
 
     create(data) {
-        // Randomly select stage if not provided (e.g., first battle)
+        // Use selected stage or default
         if (data && data.stageId) {
-            this.currentStage = STAGES[data.stageId];
-        } else {
-            const stageKeys = Object.keys(STAGES);
-            this.currentStage = STAGES[stageKeys[Math.floor(Math.random() * stageKeys.length)]];
+            this.selectedStageId = data.stageId;
         }
+        this.currentStage = STAGES[this.selectedStageId];
+        this.totalPoints = this.getStartingPoints();
+        this.remainingPoints = this.totalPoints;
+
+        // Calculate dynamic tile size to fit map in canvas
+        this.tileSize = CONFIG.getTileSize(this.currentStage.width, this.currentStage.height);
 
         document.getElementById('initiative-bar').classList.add('hidden');
 
+        this.setupStageSelection();
         this.resetUnitCounts();
         this.showArmySelection();
+        
         this.gridGraphics = this.add.graphics();
         this.drawGrid();
         window.gameScene = this;
+    }
+
+    setupStageSelection() {
+        // Setup stage selection button listeners
+        const stageButtons = document.querySelectorAll('.stage-btn');
+        stageButtons.forEach(btn => {
+            btn.onclick = () => {
+                const stageId = btn.dataset.stage;
+                this.selectStage(stageId);
+            };
+        });
+    }
+
+    selectStage(stageId) {
+        this.selectedStageId = stageId;
+        this.currentStage = STAGES[stageId];
+        this.totalPoints = this.getStartingPoints();
+        
+        // Recalculate tile size for new stage
+        this.tileSize = CONFIG.getTileSize(this.currentStage.width, this.currentStage.height);
+        
+        // Update UI
+        document.querySelectorAll('.stage-btn').forEach(btn => {
+            if (btn.dataset.stage === stageId) {
+                btn.classList.add('active');
+                btn.style.background = '#4a7c59';
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = '#2D241E';
+            }
+        });
+
+        // Reset unit counts when changing stage (since points change)
+        this.resetUnitCounts();
+        this.remainingPoints = this.totalPoints;
+        this.updatePointsDisplay();
+        
+        // Redraw grid for new stage
+        this.drawGrid();
     }
 
     drawGrid() {
@@ -2357,23 +2413,30 @@ export class PreGameScene extends Phaser.Scene {
         const gridHeight = this.currentStage.height;
         const { x1: placementStartX, x2: placementEndX, y1: placementStartY, y2: placementEndY } = this.currentStage.playerArea;
 
+        // Determine colors based on stage
+        const isRuins = this.currentStage.id === 'ruins';
+        const colorA = isRuins ? CONFIG.COLORS.DIRT : CONFIG.COLORS.GRASS;
+        const colorB = isRuins ? CONFIG.COLORS.DIRT_DARK : CONFIG.COLORS.GRASS_DARK;
+
+        const tileSize = this.tileSize;
+
         for (let y = 0; y < gridHeight; y++) {
             for (let x = 0; x < gridWidth; x++) {
                 const isPlacementZone = x >= placementStartX && x < placementEndX && y >= placementStartY && y < placementEndY;
-                const baseColor = (x + y) % 2 === 0 ? CONFIG.COLORS.GRASS : CONFIG.COLORS.GRASS_DARK;
+                const baseColor = (x + y) % 2 === 0 ? colorA : colorB;
                 // Make placement zone brighter
                 const alpha = isPlacementZone ? 0.6 : 0.2;
                 this.gridGraphics.fillStyle(baseColor, alpha);
-                this.gridGraphics.fillRect(x * CONFIG.TILE_SIZE, y * CONFIG.TILE_SIZE, CONFIG.TILE_SIZE - 2, CONFIG.TILE_SIZE - 2);
+                this.gridGraphics.fillRect(x * tileSize, y * tileSize, tileSize - 2, tileSize - 2);
 
                 // Add border highlight for placement zone
                 if (isPlacementZone) {
                     this.gridGraphics.lineStyle(2, 0xA68966, 0.5);
                     this.gridGraphics.strokeRect(
-                        x * CONFIG.TILE_SIZE + 2,
-                        y * CONFIG.TILE_SIZE + 2,
-                        CONFIG.TILE_SIZE - 4,
-                        CONFIG.TILE_SIZE - 4
+                        x * tileSize + 2,
+                        y * tileSize + 2,
+                        tileSize - 4,
+                        tileSize - 4
                     );
                 }
             }
@@ -2391,6 +2454,7 @@ export class PreGameScene extends Phaser.Scene {
 
     updatePointsDisplay() {
         document.getElementById('points-remaining').textContent = this.remainingPoints;
+        document.getElementById('points-total').textContent = this.totalPoints;
 
         const confirmBtn = document.getElementById('confirm-army');
         const totalUnits = Object.values(this.unitCounts).reduce((a, b) => a + b, 0);
@@ -2423,6 +2487,7 @@ export class PreGameScene extends Phaser.Scene {
         this.placedUnits = [];
         this.selectedPlacementUnit = null;
 
+        const tileSize = this.tileSize;
         const gridHeight = this.currentStage.height;
         const { x1: placementStartX, x2: placementEndX, y1: placementStartY, y2: placementEndY } = this.currentStage.playerArea;
         let initialPlacementX = placementStartX;
@@ -2442,8 +2507,8 @@ export class PreGameScene extends Phaser.Scene {
                 }
 
                 if (spawnY !== -1) {
-                    const x = initialPlacementX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-                    const y = spawnY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+                    const x = initialPlacementX * tileSize + tileSize / 2;
+                    const y = spawnY * tileSize + tileSize / 2;
                     const sprite = this.add.text(x, y, UNIT_TYPES[type].emoji, { fontSize: '36px' }).setOrigin(0.5);
                     this.placedUnits.push({ type, x: initialPlacementX, y: spawnY, sprite });
                 }
@@ -2458,8 +2523,10 @@ export class PreGameScene extends Phaser.Scene {
         this.input.on('pointerdown', (pointer) => {
             if (!this.placementMode) return;
 
-            const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
-            const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
+            // Convert screen coordinates to world coordinates (accounting for camera zoom)
+            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+            const gridX = Math.floor(worldPoint.x / tileSize);
+            const gridY = Math.floor(worldPoint.y / tileSize);
 
             const inPlacementZone = gridX >= placementStartX && gridX < placementEndX && gridY >= placementStartY && gridY < placementEndY;
             if (!inPlacementZone) {
@@ -2479,8 +2546,8 @@ export class PreGameScene extends Phaser.Scene {
                     this.selectedPlacementUnit.x = gridX;
                     this.selectedPlacementUnit.y = gridY;
                     this.selectedPlacementUnit.sprite.setPosition(
-                        gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-                        gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2
+                        gridX * tileSize + tileSize / 2,
+                        gridY * tileSize + tileSize / 2
                     );
                     this.selectedPlacementUnit.sprite.setAlpha(1.0);
                     this.selectedPlacementUnit = null;
@@ -2505,8 +2572,10 @@ export class PreGameScene extends Phaser.Scene {
             if (!this.placementMode || !this.selectedPlacementUnit) return;
             this.drawGrid();
 
-            const gridX = Math.floor(pointer.x / CONFIG.TILE_SIZE);
-            const gridY = Math.floor(pointer.y / CONFIG.TILE_SIZE);
+            // Convert screen coordinates to world coordinates (accounting for camera zoom)
+            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+            const gridX = Math.floor(worldPoint.x / tileSize);
+            const gridY = Math.floor(worldPoint.y / tileSize);
 
             if (gridX >= placementStartX && gridX < placementEndX &&
                 gridY >= placementStartY && gridY < placementEndY) {
@@ -2514,10 +2583,10 @@ export class PreGameScene extends Phaser.Scene {
 
                 this.gridGraphics.fillStyle(isOccupied ? 0x9E4A4A : 0x6B8B5B, 0.5);
                 this.gridGraphics.fillRect(
-                    gridX * CONFIG.TILE_SIZE + 4,
-                    gridY * CONFIG.TILE_SIZE + 4,
-                    CONFIG.TILE_SIZE - 8,
-                    CONFIG.TILE_SIZE - 8
+                    gridX * tileSize + 4,
+                    gridY * tileSize + 4,
+                    tileSize - 8,
+                    tileSize - 8
                 );
             }
         });
@@ -2543,14 +2612,15 @@ export class PreGameScene extends Phaser.Scene {
         }
 
         // Assign each unit a new random cell
+        const tileSize = this.tileSize;
         this.placedUnits.forEach((unit, index) => {
             if (availableCells[index]) {
                 const newPos = availableCells[index];
                 unit.x = newPos.x;
                 unit.y = newPos.y;
                 unit.sprite.setPosition(
-                    newPos.x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-                    newPos.y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2
+                    newPos.x * tileSize + tileSize / 2,
+                    newPos.y * tileSize + tileSize / 2
                 );
             }
         });

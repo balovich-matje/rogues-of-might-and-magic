@@ -422,8 +422,8 @@ export class SpellSystem {
 
     // Visual Effects
     createExplosionEffect(gridX, gridY, radius) {
-        const x = gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-        const y = gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+        const x = gridX * this.tileSize + this.tileSize / 2;
+        const y = gridY * this.tileSize + this.tileSize / 2;
         const scale = radius === 2 ? 5 : 3;
 
         const explosion = this.scene.add.circle(x, y, 20, 0xff6600);
@@ -451,8 +451,8 @@ export class SpellSystem {
     }
 
     createMeteorEffect(gridX, gridY) {
-        const x = gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-        const y = gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+        const x = gridX * this.tileSize + this.tileSize / 2;
+        const y = gridY * this.tileSize + this.tileSize / 2;
 
         const meteor = this.scene.add.circle(x, y - 200, 30, 0xff3300);
         this.scene.tweens.add({
@@ -468,8 +468,8 @@ export class SpellSystem {
     }
 
     createIceEffect(gridX, gridY) {
-        const x = gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-        const y = gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+        const x = gridX * this.tileSize + this.tileSize / 2;
+        const y = gridY * this.tileSize + this.tileSize / 2;
 
         for (let i = 0; i < 6; i++) {
             const crystal = this.scene.add.polygon(x, y, [0, -15, 10, 0, 0, 15, -10, 0], 0x87ceeb);

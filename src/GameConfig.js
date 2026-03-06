@@ -5,16 +5,26 @@
 export const CONFIG = {
     GRID_WIDTH: 10,
     GRID_HEIGHT: 8,
-    TILE_SIZE: 64,
+    TILE_SIZE: 64,  // Base tile size, will be calculated dynamically per stage
+    CANVAS_WIDTH: 640,
+    CANVAS_HEIGHT: 512,
     COLORS: {
         GRASS: 0x4a7c59,
         GRASS_DARK: 0x3d6b4a,
+        DIRT: 0x7a6b5a,
+        DIRT_DARK: 0x5a4b3a,
         HIGHLIGHT_MOVE: 0x4a90d9,
         HIGHLIGHT_ATTACK: 0xd94a4a,
         HIGHLIGHT_SELECTED: 0xffd700,
         PLAYER_SIDE: 0x4a7cd9,
         ENEMY_SIDE: 0xd94a4a,
         WALL: 0x5a5a5a
+    },
+    // Calculate dynamic tile size to fit map in canvas
+    getTileSize(width, height) {
+        const sizeX = this.CANVAS_WIDTH / width;
+        const sizeY = this.CANVAS_HEIGHT / height;
+        return Math.floor(Math.min(sizeX, sizeY));
     }
 };
 
@@ -25,16 +35,18 @@ export const STAGES = {
         width: 10,
         height: 8,
         playerArea: { x1: 0, x2: 2, y1: 0, y2: 8 },
-        hasObstacles: false
+        hasObstacles: false,
+        startingPoints: 1000
     },
     ruins: {
         id: 'ruins',
-        name: 'Fortress of the Fallen',
+        name: 'Ruins of a Castle',
         width: 15,
         height: 15,
         playerArea: { x1: 5, x2: 10, y1: 5, y2: 10 },
         hasObstacles: true,
-        spawnLogic: 'perimeter'
+        spawnLogic: 'perimeter',
+        startingPoints: 1700
     }
 };
 

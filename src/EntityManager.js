@@ -467,14 +467,14 @@ export class UnitManager {
         let spriteX, spriteY;
         if (bossSize > 1) {
             // Center of the 2x2 block
-            spriteX = gridX * CONFIG.TILE_SIZE + (bossSize * CONFIG.TILE_SIZE) / 2;
-            spriteY = gridY * CONFIG.TILE_SIZE + (bossSize * CONFIG.TILE_SIZE) / 2;
+            spriteX = gridX * this.scene.tileSize + (bossSize * this.scene.tileSize) / 2;
+            spriteY = gridY * this.scene.tileSize + (bossSize * this.scene.tileSize) / 2;
         } else {
-            spriteX = gridX * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-            spriteY = gridY * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+            spriteX = gridX * this.scene.tileSize + this.scene.tileSize / 2;
+            spriteY = gridY * this.scene.tileSize + this.scene.tileSize / 2;
         }
         // For images: position bottom 5px above tile bottom (adjusted for boss size)
-        const yBottom = (gridY + bossSize) * CONFIG.TILE_SIZE - 5;
+        const yBottom = (gridY + bossSize) * this.scene.tileSize - 5;
 
         // Check if unit has an image and if it's loaded
         const imageKey = template.image ? type.toLowerCase() + '_img' : null;
@@ -488,10 +488,13 @@ export class UnitManager {
             const srcHeight = texture.getSourceImage().height;
             // Target: fit within 64px tile, but allow up to 1.3x (83px) for tall units
             // For 2x2 bosses, allow larger sprites
-            const maxSize = bossSize > 1 ? CONFIG.TILE_SIZE * bossSize * 1.2 : CONFIG.TILE_SIZE * 1.3;
+            const maxSize = bossSize > 1 ? this.scene.tileSize * bossSize * 1.2 : this.scene.tileSize * 1.3;
             const scale = Math.min(maxSize / srcWidth, maxSize / srcHeight);
             unit.sprite.setScale(scale);
             unit.sprite.setOrigin(0.5, 1.0); // Bottom center so feet are on the tile
+            
+            // Flip enemy units to face right-to-left, players face left-to-right
+            unit.sprite.setFlipX(unit.isPlayer);
         } else {
             // For 2x2 bosses, use larger emoji
             const fontSize = bossSize > 1 ? '48px' : '36px';
@@ -500,6 +503,9 @@ export class UnitManager {
                 unit.emoji,
                 { fontSize: fontSize, align: 'center' }
             ).setOrigin(0.5);
+            
+            // Flip enemy units to face right-to-left, players face left-to-right
+            unit.sprite.setFlipX(unit.isPlayer);
         }
 
         unit.healthBar = this.scene.add.graphics();
@@ -607,14 +613,14 @@ export class UnitManager {
         if (hasImage) {
             // Images: position at bottom of tile block with 5px gap
             unit.sprite.setPosition(
-                newX * CONFIG.TILE_SIZE + (bossSize * CONFIG.TILE_SIZE) / 2,
-                (newY + bossSize) * CONFIG.TILE_SIZE - 5
+                newX * this.scene.tileSize + (bossSize * this.scene.tileSize) / 2,
+                (newY + bossSize) * this.scene.tileSize - 5
             );
         } else {
             // Emoji: position at center of tile block
             unit.sprite.setPosition(
-                newX * CONFIG.TILE_SIZE + (bossSize * CONFIG.TILE_SIZE) / 2,
-                newY * CONFIG.TILE_SIZE + (bossSize * CONFIG.TILE_SIZE) / 2
+                newX * this.scene.tileSize + (bossSize * this.scene.tileSize) / 2,
+                newY * this.scene.tileSize + (bossSize * this.scene.tileSize) / 2
             );
         }
         unit.updateHealthBar();

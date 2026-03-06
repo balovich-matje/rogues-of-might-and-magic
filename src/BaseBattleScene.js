@@ -174,8 +174,8 @@ export class BaseBattleScene extends Phaser.Scene {
         if (this.battleEnded) return;
         if (!this.isPlayerTurn()) return;
 
-        const x = Math.floor(pointer.x / CONFIG.TILE_SIZE);
-        const y = Math.floor(pointer.y / CONFIG.TILE_SIZE);
+        const x = Math.floor(pointer.x / this.tileSize);
+        const y = Math.floor(pointer.y / this.tileSize);
 
         if (x < 0 || x >= CONFIG.GRID_WIDTH || y < 0 || y >= CONFIG.GRID_HEIGHT) return;
 

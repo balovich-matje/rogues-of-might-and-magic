@@ -91,22 +91,22 @@
     <div id="pregame-screen" class="victory-screen">
         <h2 style="color: #A68966;">⚔️ Army Selection ⚔️</h2>
 
-        <!-- PVP Mode Toggle -->
+        <!-- Stage Selection -->
         <div style="margin-bottom: 20px;">
-            <div id="mode-selector"
+            <div id="stage-selector"
                 style="display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 15px;">
-                <button id="mode-pve" class="spell-button" style="background: #4a7c59;">
-                    🎮 PVE Mode
+                <button id="stage-forest" class="spell-button stage-btn active" data-stage="forest" style="background: #4a7c59;">
+                    🌲 Whispering Woods
                 </button>
-                <button id="mode-stages" class="spell-button" disabled style="opacity: 0.5; filter: grayscale(100%);">
-                    �️ Stage selection (WIP)
+                <button id="stage-ruins" class="spell-button stage-btn" data-stage="ruins" style="background: #2D241E;">
+                    🏰 Ruins of a Castle
                 </button>
             </div>
         </div>
 
         <p style="color: #E3D5B8; margin-bottom: 10px; font-size: 18px;">Spend your points wisely!</p>
         <div class="mana-display" style="margin-bottom: 20px;">
-            💰 Points: <span id="points-remaining">1000</span>/1000
+            💰 Points: <span id="points-remaining">1000</span>/<span id="points-total">1000</span>
         </div>
 
         <div

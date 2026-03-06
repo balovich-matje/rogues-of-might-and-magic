@@ -1,14 +1,26 @@
-# ⚔️ Steel and Sigils v0.81
+# ⚔️ Steel and Sigils v0.82
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
 ## 🎮 How to Play
 
 1. Open `index.html` in your browser
-2. **Army Selection**: Spend points to buy starting units (1000 points)
-3. **Unit Placement**: Place your units in your designated area (left side)
-4. **Combat**: Click units to select, move (blue tiles), and attack enemies (red tiles)
-5. **Victory**: Defeat all enemies to win and choose upgrades for the next battle
+2. **Stage Selection**: Choose your battlefield:
+   - 🌲 **Whispering Woods** (10×8): 1000 starting points, open grassland
+   - 🏰 **Ruins of a Castle** (15×15): 1700 starting points, dirt terrain with walls
+3. **Army Selection**: Spend points to buy starting units
+4. **Unit Placement**: Place your units in your designated area
+5. **Combat**: Click units to select, move (blue tiles), and attack enemies (red tiles)
+6. **Victory**: Defeat all enemies to win and choose upgrades for the next battle
+
+## 🗺️ Stage Selection
+
+Choose your battlefield before each run:
+
+| Stage | Size | Points | Terrain | Features |
+|-------|------|--------|---------|----------|
+| 🌲 Whispering Woods | 10×8 | 1000 | Grass | Open field, no obstacles |
+| 🏰 Ruins of a Castle | 15×15 | 1700 | Dirt | Stone walls, larger battles |
 
 ## 🎮 Game Modes
 
@@ -16,6 +28,7 @@ A browser-based turn-based tactical combat game inspired by Heroes of Might and 
 - Progress through increasingly difficult battles
 - Victory rewards: new units, buffs, magic enhancements
 - Boss waves every 5 rounds
+- Maps scale to fit screen (smaller maps = larger tiles)
 
 ## 📋 Core Mechanics
 
@@ -151,6 +164,8 @@ Buffs now have specific rarity tiers (Common to Mythic):
 
 Grim Dark Fantasy aesthetic with aged gold (#A68966), dark wood (#2D241E), and parchment (#E3D5B8) colors.
 
+All unit sprites are AI-generated pixel art (64×64) using the **zimage** model via Pollinations.ai API. Units face left-to-right and are flipped programmatically for enemies.
+
 ## 🛠️ Tech Stack
 
 | Component | Technology |
@@ -185,5 +200,9 @@ Grim Dark Fantasy aesthetic with aged gold (#A68966), dark wood (#2D241E), and p
 │
 └── images/                 # Unit sprites
     ├── player/             # 9 player unit PNGs
-    └── enemy/              # 4 enemy unit PNGs
+    ├── enemy/              # Enemy factions
+    │   ├── greenskin/      # Greenskin Horde
+    │   ├── dungeon/        # Dungeon Dwellers
+    │   └── cultist/        # Old God Worshippers
+    └── obstacles/          # Wall/obstacle sprites
 ```

@@ -9,10 +9,11 @@ import { SPELLS } from './GameConfig.js';
 // GRID SYSTEM
 // ============================================
 export class GridSystem {
-    constructor(scene, width, height) {
+    constructor(scene, width, height, tileSize) {
         this.scene = scene;
         this.width = width || CONFIG.GRID_WIDTH;
         this.height = height || CONFIG.GRID_HEIGHT;
+        this.tileSize = tileSize || this.tileSize;
         this.tiles = [];
         this.highlightGraphics = null;
         this.aoePreviewGraphics = null;
@@ -22,16 +23,22 @@ export class GridSystem {
     }
 
     create() {
+        // Determine colors based on stage
+        const isRuins = this.scene.currentStage && this.scene.currentStage.id === 'ruins';
+        const colorA = isRuins ? CONFIG.COLORS.DIRT : CONFIG.COLORS.GRASS;
+        const colorB = isRuins ? CONFIG.COLORS.DIRT_DARK : CONFIG.COLORS.GRASS_DARK;
+        const tileSize = this.tileSize;
+
         // Create tile graphics
         for (let y = 0; y < this.height; y++) {
             this.tiles[y] = [];
             for (let x = 0; x < this.width; x++) {
-                const color = (x + y) % 2 === 0 ? CONFIG.COLORS.GRASS : CONFIG.COLORS.GRASS_DARK;
+                const color = (x + y) % 2 === 0 ? colorA : colorB;
                 const tile = this.scene.add.rectangle(
-                    x * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-                    y * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
-                    CONFIG.TILE_SIZE - 2,
-                    CONFIG.TILE_SIZE - 2,
+                    x * tileSize + tileSize / 2,
+                    y * tileSize + tileSize / 2,
+                    tileSize - 2,
+                    tileSize - 2,
                     color
                 );
                 tile.setInteractive();
@@ -179,9 +186,9 @@ export class GridSystem {
         }
 
         for (const p of path) {
-            const px = p.x * CONFIG.TILE_SIZE + 2;
-            const py = p.y * CONFIG.TILE_SIZE + 2;
-            this.aoePreviewGraphics.fillRect(px, py, CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE - 4);
+            const px = p.x * this.tileSize + 2;
+            const py = p.y * this.tileSize + 2;
+            this.aoePreviewGraphics.fillRect(px, py, this.tileSize - 4, this.tileSize - 4);
         }
     }
 
@@ -197,10 +204,10 @@ export class GridSystem {
                 const y = centerY + dy;
 
                 if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-                    const px = x * CONFIG.TILE_SIZE + 1;
-                    const py = y * CONFIG.TILE_SIZE + 1;
-                    this.aoePreviewGraphics.fillRect(px, py, CONFIG.TILE_SIZE - 2, CONFIG.TILE_SIZE - 2);
-                    this.aoePreviewGraphics.strokeRect(px, py, CONFIG.TILE_SIZE - 2, CONFIG.TILE_SIZE - 2);
+                    const px = x * this.tileSize + 1;
+                    const py = y * this.tileSize + 1;
+                    this.aoePreviewGraphics.fillRect(px, py, this.tileSize - 2, this.tileSize - 2);
+                    this.aoePreviewGraphics.strokeRect(px, py, this.tileSize - 2, this.tileSize - 2);
                 }
             }
         }
@@ -224,10 +231,10 @@ export class GridSystem {
         for (let dy = 0; dy < bossSize; dy++) {
             for (let dx = 0; dx < bossSize; dx++) {
                 this.highlightGraphics.fillRect(
-                    (unit.gridX + dx) * CONFIG.TILE_SIZE + 2,
-                    (unit.gridY + dy) * CONFIG.TILE_SIZE + 2,
-                    CONFIG.TILE_SIZE - 4,
-                    CONFIG.TILE_SIZE - 4
+                    (unit.gridX + dx) * this.tileSize + 2,
+                    (unit.gridY + dy) * this.tileSize + 2,
+                    this.tileSize - 4,
+                    this.tileSize - 4
                 );
             }
         }
@@ -250,10 +257,10 @@ export class GridSystem {
                             for (let dx = 0; dx < bossSize; dx++) {
                                 this.highlightGraphics.fillStyle(CONFIG.COLORS.HIGHLIGHT_MOVE, 0.4);
                                 this.highlightGraphics.fillRect(
-                                    (x + dx) * CONFIG.TILE_SIZE + 4,
-                                    (y + dy) * CONFIG.TILE_SIZE + 4,
-                                    CONFIG.TILE_SIZE - 8,
-                                    CONFIG.TILE_SIZE - 8
+                                    (x + dx) * this.tileSize + 4,
+                                    (y + dy) * this.tileSize + 4,
+                                    this.tileSize - 8,
+                                    this.tileSize - 8
                                 );
                             }
                         }
@@ -292,10 +299,10 @@ export class GridSystem {
                         for (let dx = 0; dx < enemySize; dx++) {
                             this.highlightGraphics.fillStyle(CONFIG.COLORS.HIGHLIGHT_ATTACK, 0.5);
                             this.highlightGraphics.fillRect(
-                                (enemy.gridX + dx) * CONFIG.TILE_SIZE + 4,
-                                (enemy.gridY + dy) * CONFIG.TILE_SIZE + 4,
-                                CONFIG.TILE_SIZE - 8,
-                                CONFIG.TILE_SIZE - 8
+                                (enemy.gridX + dx) * this.tileSize + 4,
+                                (enemy.gridY + dy) * this.tileSize + 4,
+                                this.tileSize - 8,
+                                this.tileSize - 8
                             );
                         }
                     }
@@ -337,17 +344,17 @@ export class GridSystem {
             if (dist > 0 && (dist === 1 || dist <= unit.rangedRange)) {
                 this.highlightGraphics.lineStyle(3, 0xff6600, 1);
                 this.highlightGraphics.strokeRect(
-                    enemy.gridX * CONFIG.TILE_SIZE + 4,
-                    enemy.gridY * CONFIG.TILE_SIZE + 4,
-                    CONFIG.TILE_SIZE - 8,
-                    CONFIG.TILE_SIZE - 8
+                    enemy.gridX * this.tileSize + 4,
+                    enemy.gridY * this.tileSize + 4,
+                    this.tileSize - 8,
+                    this.tileSize - 8
                 );
                 this.highlightGraphics.fillStyle(0xff6600, 0.3);
                 this.highlightGraphics.fillRect(
-                    enemy.gridX * CONFIG.TILE_SIZE + 4,
-                    enemy.gridY * CONFIG.TILE_SIZE + 4,
-                    CONFIG.TILE_SIZE - 8,
-                    CONFIG.TILE_SIZE - 8
+                    enemy.gridX * this.tileSize + 4,
+                    enemy.gridY * this.tileSize + 4,
+                    this.tileSize - 8,
+                    this.tileSize - 8
                 );
             }
         }
@@ -395,7 +402,19 @@ export class GridSystem {
     addObstacle(x, y) {
         this.obstacles.add(`${x},${y}`);
         if (this.tiles[y] && this.tiles[y][x]) {
-            this.tiles[y][x].setFillStyle(CONFIG.COLORS.WALL);
+            // Hide the tile and add a wall image instead
+            this.tiles[y][x].setVisible(false);
+            const tileSize = this.tileSize;
+            const wallImage = this.scene.add.image(
+                x * tileSize + tileSize / 2,
+                y * tileSize + tileSize / 2,
+                'wall_img'
+            );
+            wallImage.setDisplaySize(tileSize - 4, tileSize - 4);
+            wallImage.setDepth(1); // Ensure wall is visible above grid
+            if (!this.wallImages) this.wallImages = [];
+            this.wallImages.push({ x, y, image: wallImage });
+        } else {
         }
     }
 
