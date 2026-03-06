@@ -13,20 +13,19 @@
 </head>
 
 <body>
-    <!-- Initiative Bar (HOMM5 style - now horizontal at top) -->
-    <div id="initiative-bar" class="hidden">
-        <div id="initiative-queue"></div>
-    </div>
-
     <!-- Main Game Layout -->
     <div id="game-layout">
         <!-- Left Side Panel -->
         <div id="left-panel">
-            <!-- Mana Display -->
+            <!-- Hero Controls (Top) -->
             <div class="panel-section">
                 <div class="panel-title">🔮 Hero</div>
                 <div class="mana-display" id="mana-display">
                     💧 Mana: <span id="mana-current">100</span>/<span id="mana-max">100</span>
+                </div>
+                <!-- Magic Buffs merged with Hero section -->
+                <div id="magic-buffs-list" style="margin-top: 10px; padding: 8px; background: #1A1C1E; border: 1px solid #5D4E3E; border-radius: 4px; font-size: 12px;">
+                    <div style="color: #8B7355; font-style: italic; text-align: center;">No active buffs</div>
                 </div>
             </div>
 
@@ -37,29 +36,13 @@
                 </button>
             </div>
 
-            <!-- Magic Buffs Panel -->
-            <div class="panel-section flex-grow">
-                <div class="panel-title">✨ Magic Buffs</div>
-                <div id="magic-buffs-list">
-                    <div style="color: #8B7355; font-style: italic; text-align: center;">No active buffs</div>
-                </div>
-            </div>
-        </div>
+            <!-- Spacer to push unit controls to bottom -->
+            <div style="flex-grow: 1;"></div>
 
-        <!-- Left Panel Toggle (after panel in DOM for sibling selector) -->
-        <button id="left-toggle" class="panel-toggle left" onclick="toggleLeftPanel()" title="Toggle Hero Panel">
-            ‹
-        </button>
-
-        <!-- Game Container (Center) -->
-        <div id="game-container"></div>
-
-        <!-- Right Side Panel -->
-        <div id="right-panel">
-            <!-- Unit Info Panel -->
+            <!-- Unit Controls (Bottom) -->
             <div class="panel-section">
                 <div class="panel-title">⚔️ Unit Info</div>
-                <div id="unit-info">
+                <div id="unit-info" style="background: #1A1C1E; border: 1px solid #5D4E3E; border-radius: 4px; padding: 10px; font-size: 13px; line-height: 1.5; min-height: 100px;">
                     <em>Select a unit</em>
                 </div>
             </div>
@@ -79,18 +62,44 @@
                     ⏹️ <span style="color: #FFD700;">E</span>nd Turn
                 </button>
             </div>
+        </div>
 
-            <!-- Combat Log Button (at bottom) -->
+        <!-- Left Panel Toggle (after panel in DOM for sibling selector) -->
+        <button id="left-toggle" class="panel-toggle left" onclick="toggleLeftPanel()" title="Toggle Hero Panel">
+            ‹
+        </button>
+
+        <!-- Game Container (Center) -->
+        <div id="game-container"></div>
+
+        <!-- Right Side Panel -->
+        <div id="right-panel">
+            <!-- Initiative Bar View -->
+            <div id="initiative-view" class="panel-section" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="panel-title">📊 Initiative</div>
+                <div id="initiative-queue" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 5px; background: #1A1C1E; border: 1px solid #5D4E3E; border-radius: 4px;">
+                    <!-- Initiative units will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Combat Log View (hidden by default) -->
+            <div id="combat-log-view" class="panel-section hidden" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="panel-title">📜 Battle Log</div>
+                <div id="combat-log-panel-content" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 12px; line-height: 1.5; color: #B8A896; font-family: monospace; background: #1A1C1E; border: 1px solid #5D4E3E; border-radius: 4px;">
+                    <!-- Combat log entries will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Toggle Button at Bottom -->
             <div class="panel-section" style="margin-top: auto;">
-                <button id="combat-log-btn" class="spell-button" onclick="gameScene.toggleCombatLog()" title="Combat Log"
-                    style="width: 100%;">
-                    📜 Combat Log
+                <button id="view-toggle-btn" class="spell-button" onclick="toggleRightPanelView()" style="width: 100%;">
+                    📜 Show Battle Log
                 </button>
             </div>
         </div>
 
         <!-- Right Panel Toggle (after panel in DOM for sibling selector) -->
-        <button id="right-toggle" class="panel-toggle right" onclick="toggleRightPanel()" title="Toggle Unit Panel">
+        <button id="right-toggle" class="panel-toggle right" onclick="toggleRightPanel()" title="Toggle Panel">
             ›
         </button>
     </div>
@@ -474,6 +483,24 @@
             panel.classList.toggle('collapsed');
             // Flip arrow direction: › when open, ‹ when collapsed
             toggle.textContent = panel.classList.contains('collapsed') ? '‹' : '›';
+        }
+
+        function toggleRightPanelView() {
+            const initiativeView = document.getElementById('initiative-view');
+            const combatLogView = document.getElementById('combat-log-view');
+            const toggleBtn = document.getElementById('view-toggle-btn');
+
+            if (initiativeView.classList.contains('hidden')) {
+                // Switch to initiative view
+                initiativeView.classList.remove('hidden');
+                combatLogView.classList.add('hidden');
+                toggleBtn.innerHTML = '📜 Show Battle Log';
+            } else {
+                // Switch to combat log view
+                initiativeView.classList.add('hidden');
+                combatLogView.classList.remove('hidden');
+                toggleBtn.innerHTML = '📊 Show Initiative';
+            }
         }
     </script>
 

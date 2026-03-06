@@ -80,7 +80,6 @@ export class BattleScene extends Phaser.Scene {
     create(data) {
         document.getElementById('left-panel').classList.remove('hidden', 'collapsed');
         document.getElementById('right-panel').classList.remove('hidden', 'collapsed');
-        document.getElementById('initiative-bar').classList.remove('hidden');
         // Initialize systems
         this.unitManager = new UnitManager(this);
         this.turnSystem = new TurnSystem(this);
@@ -640,6 +639,7 @@ export class BattleScene extends Phaser.Scene {
         const color = colorMap[type] || '#B8A896';
         this.combatLog.push({ message, color, type });
 
+        // Update modal content (for backwards compatibility)
         const content = document.getElementById('combat-log-content');
         if (content) {
             const entry = document.createElement('div');
@@ -648,19 +648,21 @@ export class BattleScene extends Phaser.Scene {
             content.appendChild(entry);
             content.scrollTop = content.scrollHeight;
         }
+
+        // Update new panel content
+        const panelContent = document.getElementById('combat-log-panel-content');
+        if (panelContent) {
+            const entry = document.createElement('div');
+            entry.style.cssText = `color: ${color}; margin-bottom: 3px; border-bottom: 1px solid rgba(166, 137, 102, 0.15); padding-bottom: 3px;`;
+            entry.textContent = message;
+            panelContent.appendChild(entry);
+            panelContent.scrollTop = panelContent.scrollHeight;
+        }
     }
 
     toggleCombatLog() {
-        const modal = document.getElementById('combat-log-modal');
-        if (!modal) return;
-        this.combatLogOpen = !this.combatLogOpen;
-        if (this.combatLogOpen) {
-            modal.classList.remove('hidden');
-            modal.style.transform = 'translateX(0)';
-        } else {
-            modal.style.transform = 'translateX(100%)';
-            this.time.delayedCall(250, () => modal.classList.add('hidden'));
-        }
+        // Now toggles the view in the right panel instead of a modal
+        toggleRightPanelView();
     }
 
     // Unit selection and movement
@@ -2360,7 +2362,7 @@ export class PreGameScene extends Phaser.Scene {
         // Calculate dynamic tile size to fit map in canvas
         this.tileSize = CONFIG.getTileSize(this.currentStage.width, this.currentStage.height);
 
-        document.getElementById('initiative-bar').classList.add('hidden');
+
 
         this.setupStageSelection();
         this.resetUnitCounts();
