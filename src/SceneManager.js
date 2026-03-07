@@ -180,6 +180,15 @@ export class BattleScene extends Phaser.Scene {
                     if (unitData.statModifiers.hasDivineRetribution) unit.hasDivineRetribution = true;
                     if (unitData.statModifiers.hasArcaneFocus) unit.hasArcaneFocus = true;
 
+                    // Restore glow effects after a short delay (sprite needs to exist)
+                    if (unitData.statModifiers.hasDivineRetribution || unitData.statModifiers.hasArcaneFocus) {
+                        this.time.delayedCall(100, () => unit.updatePerkGlow('mythic'));
+                    } else if (unitData.statModifiers.hasDoubleStrike || unitData.statModifiers.hasCleave || 
+                               unitData.statModifiers.hasRicochet || unitData.statModifiers.hasPiercing || 
+                               unitData.statModifiers.hasBackstab) {
+                        this.time.delayedCall(100, () => unit.updatePerkGlow('legendary'));
+                    }
+
                     unit.updateHealthBar();
                 }
 
@@ -1965,6 +1974,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasDoubleStrike = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasDoubleStrike = true;
+                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -1982,6 +1992,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasCleave = true;
                     unit.statModifiers.damage = (unit.statModifiers.damage || 0) + 40;
+                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -1999,6 +2010,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasRicochet = true;
                     unit.statModifiers.damage = (unit.statModifiers.damage || 0) + 40;
+                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2016,6 +2028,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasPiercing = true;
                     unit.statModifiers.rangedRange = 999;
+                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2031,6 +2044,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasBackstab = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasBackstab = true;
+                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2073,6 +2087,7 @@ export class BattleScene extends Phaser.Scene {
                     }
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasDivineRetribution = true;
+                    unit.updatePerkGlow('mythic');
                 }
             });
         }
@@ -2091,6 +2106,7 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasArcaneFocus = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasArcaneFocus = true;
+                    unit.updatePerkGlow('mythic');
                 }
             });
         }

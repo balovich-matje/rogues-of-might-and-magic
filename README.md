@@ -1,4 +1,4 @@
-# ⚔️ Steel and Sigils v0.82
+# ⚔️ Steel and Sigils v0.88
 
 A browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5.
 
@@ -62,7 +62,7 @@ Choose your battlefield before each run:
 
 ### Legendary Powers ⭐
 
-After victory, there's a chance to roll a **Legendary Power** in place of a regular buff. These can only be applied to units that don't already have them:
+After victory, there's a chance to roll a **Legendary Power** in place of a regular buff. These can only be applied to units that don't already have them. Units with legendary perks display a subtle **orange glow**.
 
 | Unit | Legendary Power | Effect |
 |------|-----------------|--------|
@@ -74,7 +74,7 @@ After victory, there's a chance to roll a **Legendary Power** in place of a regu
 
 ### Mythic Powers ☄️
 
-Mythic powers are the pinnacle of unit enhancements, possessing an animated red glowing aura. 
+Mythic powers are the pinnacle of unit enhancements, displaying a visible **red glowing aura**. **Mythic perks can only be acquired by units that already have their respective legendary perk.** 
 
 | Unit | Mythic Power | Effect |
 |------|-----------------|--------|

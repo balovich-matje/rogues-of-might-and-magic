@@ -1,67 +1,125 @@
 # Steel and Sigils: Agent Overview
 
+## Project Overview
+
+Steel and Sigils is a browser-based turn-based tactical combat game inspired by Heroes of Might and Magic 5. Built with Phaser 3, vanilla JavaScript (ES6 modules), and CSS. No build tools required - runs directly in browser.
+
 ## Project Structure
 
-The project is a web-based tactical combat game built with HTML, CSS, and JavaScript. It uses Phaser for game rendering and Firebase/WebRTC for multiplayer functionality. Understanding the file structure is crucial for effective development and debugging.
+```
+├── index.html              # Main HTML, UI structure
+├── style.css               # Styling - Grim Dark Fantasy theme
+├── README.md               # User-facing documentation
+├── AGENTS.md               # This file - developer guide
+├── LICENSE                 # Project license
+│
+├── src/                    # Source code (ES6 modules)
+│   ├── main.js             # Entry point - Phaser bootstrap, GAME_VERSION
+│   ├── GameConfig.js       # Constants, CONFIG, SPELLS, STAGES (3 maps)
+│   ├── SceneManager.js     # BattleScene, PreGameScene, reward system
+│   ├── EntityManager.js    # Unit class, UnitManager, TurnSystem
+│   ├── InputHandler.js     # GridSystem - input handling, obstacles
+│   ├── SpellSystem.js      # Spell casting, effects
+│   └── UIHandler.js        # UIManager - DOM updates, floating text
+│
+└── images/                 # Unit sprites & obstacles
+    ├── player/             # 9 player unit PNGs
+    ├── enemy/              # Enemy factions (Greenskin, Dungeon, Cultist)
+    └── obstacles/          # wall.png, rock.png
+```
 
-*   `index.html`: Main HTML file, defines the structure of the web page, UI elements, and includes links to CSS and JavaScript files.
-*   `style.css`: CSS stylesheet, controls the visual appearance of the game and UI.
-*   `src/`: Contains the core JavaScript modules.
-    *   `src/main.js`: The main entry point for the game. It initializes Phaser and sets up the game configuration.
-    *   `src/units.js`: Defines the data structures for different unit types in the game, including their stats and abilities.
-    *   `src/GameConfig.js`: Configuration constants, including STAGES with map definitions.
-    *   `src/SceneManager.js`, `src/EntityManager.js`, `src/UIHandler.js`, `src/InputHandler.js`, etc.: Modular game components handling different aspects of game logic.
-*   `images/`: Contains image assets used in the game.
-    *   `images/player/`: Player unit sprites
-    *   `images/enemy/greenskin/`: Greenskin Horde faction
-    *   `images/enemy/dungeon/`: Dungeon Dwellers faction
-    *   `images/enemy/cultist/`: Old God Worshippers faction
-    *   `images/obstacles/`: Obstacle/wall sprites
+## Game Architecture
 
-## Game Mechanics and Logic
+### Core Systems
 
-The game revolves around turn-based tactical battles. Key mechanics include:
+| System | File | Responsibility |
+|--------|------|----------------|
+| **BattleScene** | SceneManager.js | Main game loop, combat, rewards |
+| **UnitManager** | EntityManager.js | Unit creation, placement, tracking |
+| **TurnSystem** | EntityManager.js | Initiative queue, AI turns, rounds |
+| **GridSystem** | InputHandler.js | Tile grid, obstacles, movement highlighting |
+| **SpellSystem** | SpellSystem.js | Mana, spell casting, effects |
+| **UIManager** | UIHandler.js | DOM updates, UI panels, floating text |
 
-*   **Game Modes:** Features PVE mode (Player vs AI).
-*   **Unit Management:** Players build armies by selecting units with different stats and abilities, each costing a certain number of points.
-*   **Placement Phase:** Before the battle, players strategically place their units on the battlefield.
-*   **Turn-Based Combat:** Units take turns based on their initiative, moving and attacking according to their stats and abilities.
-*   **Resource Management:** Mana is used to cast spells, which can affect the battlefield or individual units.
-*   **Perks and Upgrades:** Post-battle rewards introduce a rarity tier scaling from Common > Epic > Legendary > Mythic. Certain heroes feature uniquely tailored mechanics (like Paladin's Divine Retribution or Sorcerer's Arcane Pierce path logic).
-*   **Victory Conditions:** The game ends when one player eliminates all of the opponent's units.
-*   **Stage Selection:** Players can choose between different maps:
-    *   **Whispering Woods** (10×8): 1000 starting points, grass terrain
-    *   **Ruins of a Castle** (15×15): 1700 starting points, dirt terrain with obstacles
+### Unit Properties
 
-## Key Architecture and Variables
+Units are instances of the `Unit` class with these key properties:
+- `type`, `name`, `emoji`, `health`, `maxHealth`, `damage`
+- `moveRange`, `rangedRange`, `initiative`, `isPlayer`
+- `gridX`, `gridY`, `sprite`, `healthBar`
+- Buff/debuff tracking: `hasteRounds`, `shieldRounds`, `blessRounds`, etc.
+- **Legendary perks**: `hasDoubleStrike`, `hasCleave`, `hasRicochet`, `hasPiercing`, `hasBackstab`
+- **Mythic perks**: `hasDivineRetribution`, `hasArcaneFocus`
+- `glowEffect` - Phaser sprite for legendary/mythic aura
 
-*   `GAME_VERSION`: Tracks the current version of the game.
-*   `UNIT_TYPES`: (in `src/units.js`) An object containing definitions for all unit types, including their stats, abilities, and cost.
-*   `STAGES`: (in `src/GameConfig.js`) Map definitions with dimensions, player areas, terrain colors, and starting points.
-*   **Modular Architecture:** The game uses ES6 modules (e.g., `SceneManager`, `EntityManager`, `UIHandler`) instead of global state functions, encapsulating logic into specific domains.
-*   **Phaser Scenes:** The game flow is managed through distinct Phaser scenes (e.g., `PreGameScene`, `BattleScene`).
+## Reward System (Rarity Tiers)
 
-## Key UI Elements
+### Buff Rarities
+- **Common** (green): +HP, +DMG, +MOV, +INIT, Ranged Training
+- **Epic** (purple): Champion's Favor, Obsidian Armor, Glass Cannon, Temporal Shift
+- **Legendary** (orange): Blood Frenzy, Divine Wrath, Ricochet Shot, Arcane Pierce, Shadow Strike
+- **Mythic** (red): Divine Retribution, Arcane Focus
 
-*   **Initiative Bar:** Displays the turn order of units in the game.
-*   **UI Panel:** Contains controls for ending the turn, opening the spellbook, and displaying mana.
-*   **Unit Info Panel:** Shows detailed information about selected units.
-*   **Pregame Screen:** Allows players to select their army and choose the stage.
-*   **Spellbook Modal:** Displays available spells and their mana costs.
+### Legendary Perks by Unit
 
-## Notes
+| Unit | Legendary | Effect |
+|------|-----------|--------|
+| Berserker | Blood Frenzy | Strikes 2× per attack |
+| Paladin | Divine Wrath | 3×3 cleave, +40 DMG |
+| Ranger | Ricochet Shot | Arrows bounce, +40 DMG |
+| Sorcerer | Arcane Pierce | 999 range, pierces all |
+| Rogue | Shadow Strike | +100% backstab damage |
 
-*   The code uses comments to explain complex logic.
-*   The project is structured in a modular way, making it easy to add new features and units.
-*   All units face left-to-right in their sprite images. Enemies are flipped programmatically via `sprite.setFlipX()`.
-*   The game canvas is fixed at 640×512 pixels. Maps stretch to fill this area (smaller maps = larger tiles).
+### Mythic Perks Requirements
+- **Mythic perks can ONLY be acquired by units that already have their legendary perk**
+- Paladin: Requires Divine Wrath (hasCleave) → Divine Retribution
+- Sorcerer: Requires Arcane Pierce (hasPiercing) → Arcane Focus
 
-## Further Improvements
+### Visual Indicators
+- **Legendary**: Subtle animated orange glow on unit sprite
+- **Mythic**: More visible animated red glow (replaces legendary glow)
 
-*   Implement a more robust AI for PVE mode.
-*   Add more unit types and spells to increase strategic depth.
-*   Implement a more sophisticated combat system with more complex unit abilities.
-*   Optimize the game loop for better performance, especially in multiplayer mode.
-*   Improve the UI/UX based on user feedback.
+## Maps (Stages)
 
-This overview should serve as a solid foundation for understanding the project and contributing to its development. Remember to consult the code and documentation for more specific information.
+Defined in `GameConfig.js`:
+
+| Stage | Size | Points | Features |
+|-------|------|--------|----------|
+| Whispering Woods | 10×8 | 1000 | Grass, open field |
+| Ruins of a Castle | 15×15 | 1700 | Dirt, stone walls (wall.png) |
+| Mountain Pass | 13×11 | 1300 | Mountains, chokepoint (rock.png) |
+
+## Key Implementation Notes
+
+### Adding Glow Effects
+Unit glows are Phaser sprites with blend modes:
+```javascript
+// In UnitManager.addUnit() or when applying buff
+if (!unit.glowEffect) {
+    unit.glowEffect = this.scene.add.sprite(spriteX, yBottom, imageKey);
+    unit.glowEffect.setScale(scale * 1.2);
+    unit.glowEffect.setBlendMode(Phaser.BlendModes.ADD);
+}
+// Legendary: orange tint, Mythic: red tint
+unit.glowEffect.setTint(0xff8c00); // orange for legendary
+unit.glowEffect.setTint(0xff0000); // red for mythic
+```
+
+### Obstacle Types
+- `addObstacle(x, y, type)` supports `'wall'` and `'rock'`
+- Walls used in Ruins, rocks used in Mountain Pass
+
+### AI Pathfinding
+- A* implementation in `TurnSystem.findPath()`
+- Accounts for 2×2 bosses with `getOccupiedPositions()`
+
+### Saving/Loading
+- `prepareSaveData()` / `restoreFromSave()` in SceneManager
+- Preserves legendary/mythic buffs via `statModifiers`
+
+## Development Tips
+
+- Version is in `src/main.js` - increment by 0.01 per commit
+- Use `generate-sprites.js` (gitignored) to generate missing unit images
+- All sprites face left-to-right; enemies flipped with `setFlipX(true)`
+- Grid is dynamic - tile size calculated per stage to fit 640×512 canvas
