@@ -70,85 +70,6 @@ export class Unit {
         if (this.type === 'SUMMONER_LICH') {
             this.firstSummon = true;
         }
-
-        // Legendary/Mythic perk glow effect
-        this.glowEffect = null;
-    }
-
-    /**
-     * Update or create glow effect for legendary/mythic perks
-     * @param {string} type - 'legendary' (orange) or 'mythic' (red)
-     */
-    updatePerkGlow(type) {
-        if (!this.sprite || !this.scene) return;
-
-        // Remove existing glow if any
-        if (this.glowEffect) {
-            this.glowEffect.destroy();
-            this.glowEffect = null;
-        }
-
-        // Determine glow color and settings
-        const tint = type === 'mythic' ? 0xff3333 : 0xff8c00;
-        const scale = type === 'mythic' ? 1.5 : 1.3;
-        const alpha = type === 'mythic' ? 0.8 : 0.6;
-        const pulseDuration = type === 'mythic' ? 600 : 1000;
-
-        // Get unit's display size for proper glow sizing
-        const template = UNIT_TYPES[this.type];
-        const imageKey = template.image ? this.type.toLowerCase() + '_img' : null;
-        const hasImage = imageKey && this.scene.textures.exists(imageKey);
-        const bossSize = this.bossSize || 1;
-
-        // Calculate glow position (same as sprite)
-        const spriteX = this.sprite.x;
-        const spriteY = this.sprite.y;
-
-        if (hasImage) {
-            // For image-based units, create glow sprite behind the unit
-            this.glowEffect = this.scene.add.sprite(spriteX, spriteY, imageKey);
-            this.glowEffect.setScale(this.sprite.scaleX * scale);
-            this.glowEffect.setOrigin(0.5, 1.0);
-            this.glowEffect.setFlipX(this.sprite.flipX);
-            
-            // Apply glow effect
-            this.glowEffect.setTint(tint);
-            this.glowEffect.setBlendMode(Phaser.BlendModes.ADD);
-            this.glowEffect.setAlpha(alpha);
-        } else {
-            // For emoji-based units, create a circular glow
-            this.glowEffect = this.scene.add.graphics();
-            this.glowEffect.fillStyle(tint, alpha);
-            const radius = bossSize > 1 ? 45 : 30;
-            this.glowEffect.fillCircle(0, 0, radius);
-            this.glowEffect.x = spriteX;
-            this.glowEffect.y = spriteY - 10;
-        }
-
-        // Ensure glow is behind the unit sprite so it outlines it
-        this.glowEffect.setDepth(this.sprite.depth - 1);
-
-        // Add pulsing animation
-        if (this.glowEffect.setAlpha) {
-            this.scene.tweens.add({
-                targets: this.glowEffect,
-                alpha: { from: alpha, to: alpha * 0.3 },
-                duration: pulseDuration,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-        }
-    }
-
-    /**
-     * Remove glow effect (called when unit dies)
-     */
-    removePerkGlow() {
-        if (this.glowEffect) {
-            this.glowEffect.destroy();
-            this.glowEffect = null;
-        }
     }
 
     // Get all grid positions occupied by this unit (for 2x2 bosses)
@@ -330,9 +251,6 @@ export class Unit {
         if (this.healthBar) {
             this.healthBar.clear();
         }
-
-        // Remove glow effect when unit dies
-        this.removePerkGlow();
 
         // Clear unit info panel if this unit was selected
         if (scene && scene.selectedUnit === this) {
@@ -747,6 +665,11 @@ export class TurnSystem {
         }
 
         this.currentUnit = this.turnQueue.shift();
+
+        // Update active unit glow
+        if (this.scene.glowManager) {
+            this.scene.glowManager.setActiveUnit(this.currentUnit);
+        }
 
         if (this.currentUnit.isDead) {
             this.nextTurn();

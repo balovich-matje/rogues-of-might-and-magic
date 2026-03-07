@@ -17,6 +17,194 @@ const ENEMY_FACTIONS = {
 };
 
 // ============================================
+// GLOW MANAGER - Handles unit glow effects
+// ============================================
+class GlowManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.glows = new Map(); // unit -> glow object
+        this.activeUnitGlow = null;
+    }
+
+    /**
+     * Add a glow effect to a unit
+     * @param {Unit} unit - The unit to add glow to
+     * @param {string} type - 'legendary' (orange), 'mythic' (red), or 'active' (white)
+     */
+    addGlow(unit, type) {
+        if (!unit || !unit.sprite) return;
+
+        // Remove existing glow for this unit
+        this.removeGlow(unit);
+
+        const tileSize = this.scene.tileSize || 64;
+        const bossSize = unit.bossSize || 1;
+        const size = tileSize * bossSize;
+
+        // Glow settings by type
+        const settings = {
+            legendary: { color: 0xff8c00, alpha: 0.6, pulseSpeed: 1000 },
+            mythic: { color: 0xff3333, alpha: 0.7, pulseSpeed: 800 },
+            active: { color: 0xffffff, alpha: 0.5, pulseSpeed: 600 }
+        };
+
+        const config = settings[type] || settings.legendary;
+
+        // Create graphics object for glow
+        const glow = this.scene.add.graphics();
+        
+        // Draw the glow shape
+        if (type === 'active') {
+            // Dotted outline for active unit
+            this.drawDottedOutline(glow, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
+        } else {
+            // Filled ellipse for legendary/mythic
+            this.drawGlowEllipse(glow, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
+        }
+
+        // Store glow data
+        const glowData = {
+            graphics: glow,
+            type: type,
+            unit: unit,
+            config: config
+        };
+
+        this.glows.set(unit, glowData);
+
+        // Add pulsing animation
+        if (type !== 'active') {
+            this.scene.tweens.add({
+                targets: glow,
+                alpha: { from: 1, to: 0.4 },
+                duration: config.pulseSpeed,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        } else {
+            // Rotating animation for active unit
+            this.scene.tweens.add({
+                targets: glow,
+                rotation: Math.PI * 2,
+                duration: 3000,
+                repeat: -1,
+                ease: 'Linear'
+            });
+        }
+
+        // Set depth behind unit
+        glow.setDepth(unit.sprite.depth - 1);
+
+        return glowData;
+    }
+
+    /**
+     * Draw a glow ellipse behind the unit
+     */
+    drawGlowEllipse(graphics, x, y, size, color, alpha) {
+        const width = size * 0.9;
+        const height = size * 0.6;
+        const offsetY = size * 0.1;
+
+        graphics.fillStyle(color, alpha);
+        graphics.fillEllipse(x, y + offsetY, width, height);
+        
+        // Add a second, larger, more transparent layer
+        graphics.fillStyle(color, alpha * 0.5);
+        graphics.fillEllipse(x, y + offsetY, width * 1.3, height * 1.3);
+    }
+
+    /**
+     * Draw a dotted outline for active unit
+     */
+    drawDottedOutline(graphics, x, y, size, color, alpha) {
+        const width = size * 0.85;
+        const height = size * 0.7;
+        const offsetY = size * 0.05;
+        const dotCount = 12;
+        const dotSize = 3;
+
+        graphics.fillStyle(color, alpha);
+
+        for (let i = 0; i < dotCount; i++) {
+            const angle = (i / dotCount) * Math.PI * 2;
+            const dotX = x + Math.cos(angle) * (width / 2);
+            const dotY = (y + offsetY) + Math.sin(angle) * (height / 2);
+            graphics.fillCircle(dotX, dotY, dotSize);
+        }
+    }
+
+    /**
+     * Remove glow from a unit
+     */
+    removeGlow(unit) {
+        const glowData = this.glows.get(unit);
+        if (glowData) {
+            glowData.graphics.destroy();
+            this.glows.delete(unit);
+        }
+    }
+
+    /**
+     * Set the active unit (white dotted glow)
+     */
+    setActiveUnit(unit) {
+        // Remove old active unit glow
+        if (this.activeUnitGlow) {
+            this.removeGlow(this.activeUnitGlow);
+            this.activeUnitGlow = null;
+        }
+
+        // Add new active unit glow
+        if (unit) {
+            this.addGlow(unit, 'active');
+            this.activeUnitGlow = unit;
+        }
+    }
+
+    /**
+     * Apply legendary/mythic glow based on unit's perks
+     */
+    applyPerkGlow(unit) {
+        if (!unit) return;
+
+        // Check for mythic first (takes precedence)
+        if (unit.hasDivineRetribution || unit.hasArcaneFocus) {
+            this.addGlow(unit, 'mythic');
+        }
+        // Then check for legendary
+        else if (unit.hasDoubleStrike || unit.hasCleave || unit.hasRicochet || 
+                 unit.hasPiercing || unit.hasBackstab) {
+            this.addGlow(unit, 'legendary');
+        }
+    }
+
+    /**
+     * Update all glow positions (call in update loop if needed)
+     */
+    update() {
+        for (const [unit, glowData] of this.glows) {
+            if (unit.sprite && glowData.graphics) {
+                glowData.graphics.x = unit.sprite.x;
+                glowData.graphics.y = unit.sprite.y;
+            }
+        }
+    }
+
+    /**
+     * Clear all glows
+     */
+    clear() {
+        for (const glowData of this.glows.values()) {
+            glowData.graphics.destroy();
+        }
+        this.glows.clear();
+        this.activeUnitGlow = null;
+    }
+}
+
+// ============================================
 // BATTLE SCENE
 // ============================================
 export class BattleScene extends Phaser.Scene {
@@ -88,6 +276,10 @@ export class BattleScene extends Phaser.Scene {
     create(data) {
         document.getElementById('left-panel').classList.remove('hidden', 'collapsed');
         document.getElementById('right-panel').classList.remove('hidden', 'collapsed');
+        
+        // Initialize glow manager
+        this.glowManager = new GlowManager(this);
+        
         // Initialize systems
         this.unitManager = new UnitManager(this);
         this.turnSystem = new TurnSystem(this);
@@ -187,15 +379,6 @@ export class BattleScene extends Phaser.Scene {
                     if (unitData.statModifiers.hasDivineRetribution) unit.hasDivineRetribution = true;
                     if (unitData.statModifiers.hasArcaneFocus) unit.hasArcaneFocus = true;
 
-                    // Restore glow effects after a short delay (sprite needs to exist)
-                    if (unitData.statModifiers.hasDivineRetribution || unitData.statModifiers.hasArcaneFocus) {
-                        this.time.delayedCall(100, () => unit.updatePerkGlow('mythic'));
-                    } else if (unitData.statModifiers.hasDoubleStrike || unitData.statModifiers.hasCleave || 
-                               unitData.statModifiers.hasRicochet || unitData.statModifiers.hasPiercing || 
-                               unitData.statModifiers.hasBackstab) {
-                        this.time.delayedCall(100, () => unit.updatePerkGlow('legendary'));
-                    }
-
                     unit.updateHealthBar();
                 }
 
@@ -235,6 +418,13 @@ export class BattleScene extends Phaser.Scene {
 
         // Create enemy units
         this.createEnemyUnits();
+
+        // Apply perk glows to all units (after sprites are created)
+        this.time.delayedCall(100, () => {
+            for (const unit of this.unitManager.units) {
+                this.glowManager.applyPerkGlow(unit);
+            }
+        });
 
         // Add click handler for spell targeting and abilities
         this.input.on('pointerdown', (pointer) => {
@@ -2030,7 +2220,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasDoubleStrike = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasDoubleStrike = true;
-                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2048,7 +2237,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasCleave = true;
                     unit.statModifiers.damage = (unit.statModifiers.damage || 0) + 40;
-                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2066,7 +2254,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasRicochet = true;
                     unit.statModifiers.damage = (unit.statModifiers.damage || 0) + 40;
-                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2084,7 +2271,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasPiercing = true;
                     unit.statModifiers.rangedRange = 999;
-                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2100,7 +2286,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasBackstab = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasBackstab = true;
-                    unit.updatePerkGlow('legendary');
                 }
             });
         }
@@ -2143,7 +2328,6 @@ export class BattleScene extends Phaser.Scene {
                     }
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasDivineRetribution = true;
-                    unit.updatePerkGlow('mythic');
                 }
             });
         }
@@ -2162,7 +2346,6 @@ export class BattleScene extends Phaser.Scene {
                     unit.hasArcaneFocus = true;
                     unit.statModifiers = unit.statModifiers || {};
                     unit.statModifiers.hasArcaneFocus = true;
-                    unit.updatePerkGlow('mythic');
                 }
             });
         }
@@ -2394,6 +2577,11 @@ export class BattleScene extends Phaser.Scene {
             const targetUnit = this.selectedRewards.legendary.targetUnit;
             if (legendaryEffect && targetUnit) {
                 legendaryEffect.effect(targetUnit);
+                // Apply glow effect
+                if (this.glowManager) {
+                    const glowType = legendaryEffect.rarity === 'mythic' ? 'mythic' : 'legendary';
+                    this.glowManager.addGlow(targetUnit, glowType);
+                }
                 this.uiManager.showFloatingText(`${this.selectedRewards.legendary.effectData.name} Acquired!`, 400, 250, '#D4A574');
             }
         }
