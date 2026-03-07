@@ -56,7 +56,10 @@ const UNIT_PROMPTS = {
     'acolyte.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, hooded cultist acolyte in dark robes, face hidden in shadow, holding dagger, occult worshipper, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64',
     'neophyte.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, young cultist neophyte with bow, dark hooded cloak, sinister apprentice, ranged attacker, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64',
     'gibbering_horror.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, twisted mutant horror with multiple mouths and tentacles, gibbering mouth monster, lovecraftian aberration, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64',
-    'flesh_warped_stalker.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, mutated humanoid creature with elongated limbs and claws, flesh warped beast, fast predator monster, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64'
+    'flesh_warped_stalker.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, mutated humanoid creature with elongated limbs and claws, flesh warped beast, fast predator monster, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64',
+    
+    // Obstacles
+    'rock.png': 'pixel art game sprite, chunky large pixels, low resolution pixel art, grey mountain rock boulder, rough stone obstacle, terrain blocking debris, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64'
 };
 
 /**
@@ -177,6 +180,13 @@ async function main() {
     console.log('═══════════════════════════════════════════════════════\n');
     
     const imagePaths = extractImagePaths();
+    
+    // Add obstacle images that aren't in units.js
+    const obstacleImages = [
+        'images/obstacles/wall.png',
+        'images/obstacles/rock.png'
+    ];
+    imagePaths.push(...obstacleImages);
     
     console.log('🔍 Checking for missing images...\n');
     

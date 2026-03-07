@@ -41,58 +41,6 @@ The game revolves around turn-based tactical battles. Key mechanics include:
 *   **Modular Architecture:** The game uses ES6 modules (e.g., `SceneManager`, `EntityManager`, `UIHandler`) instead of global state functions, encapsulating logic into specific domains.
 *   **Phaser Scenes:** The game flow is managed through distinct Phaser scenes (e.g., `PreGameScene`, `BattleScene`).
 
-## Sprite Generation
-
-### How to Generate Unit Sprites
-
-To generate new unit sprites, use the `generate-sprites.js` script in the `src/` folder:
-
-```bash
-cd src
-node generate-sprites.js
-```
-
-This script will:
-1. Read `src/units.js` to find all unit image paths
-2. Check which images are missing
-3. Generate only missing images using the Pollinations.ai API
-
-### Model Selection
-
-**Recommended Model: `zimage`**
-- Best results for pixel art sprites
-- Consistent chunky pixel style
-- Good prompt adherence
-
-**Models to AVOID:**
-- `flux`: Generates images with backgrounds (not transparent)
-- `gptimage`: Produces black/blank images when used with `transparent=true` parameter
-- `gptimage-large`: Same issues as gptimage
-- `klein`: Inconsistent front-facing vs side view
-
-### API Details
-
-- **Base URL:** `https://gen.pollinations.ai`
-- **Endpoint:** `GET /image/{prompt}`
-- **Key Parameters:** `model`, `width=64`, `height=64`, `seed=42`
-- **API Key:** Passed via `?key=` query parameter
-
-### Prompt Format
-
-All prompts should include:
-- "pixel art game sprite"
-- "chunky large pixels"
-- "low resolution pixel art"
-- "facing left to right, side view"
-- "simple flat colors"
-- "grim dark fantasy game asset"
-- "64x64"
-
-Example:
-```
-pixel art game sprite, chunky large pixels, low resolution pixel art, medieval knight in plate armor with sword and shield, facing left to right, side view, simple flat colors, grim dark fantasy game asset, 64x64
-```
-
 ## Key UI Elements
 
 *   **Initiative Bar:** Displays the turn order of units in the game.

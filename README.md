@@ -165,7 +165,7 @@ Buffs now have specific rarity tiers (Common to Mythic):
 
 Grim Dark Fantasy aesthetic with aged gold (#A68966), dark wood (#2D241E), and parchment (#E3D5B8) colors.
 
-All unit sprites are AI-generated pixel art (64×64) using the **zimage** model via Pollinations.ai API. Units face left-to-right and are flipped programmatically for enemies.
+All unit sprites are pixel art (64×64). Units face left-to-right and are flipped programmatically for enemies.
 
 ## 🛠️ Tech Stack
 

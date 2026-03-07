@@ -399,21 +399,22 @@ export class GridSystem {
         return true;
     }
 
-    addObstacle(x, y) {
+    addObstacle(x, y, type = 'wall') {
         this.obstacles.add(`${x},${y}`);
         if (this.tiles[y] && this.tiles[y][x]) {
-            // Hide the tile and add a wall image instead
+            // Hide the tile and add an obstacle image instead
             this.tiles[y][x].setVisible(false);
             const tileSize = this.tileSize;
-            const wallImage = this.scene.add.image(
+            const imageKey = type === 'rock' ? 'rock_img' : 'wall_img';
+            const obstacleImage = this.scene.add.image(
                 x * tileSize + tileSize / 2,
                 y * tileSize + tileSize / 2,
-                'wall_img'
+                imageKey
             );
-            wallImage.setDisplaySize(tileSize - 4, tileSize - 4);
-            wallImage.setDepth(1); // Ensure wall is visible above grid
+            obstacleImage.setDisplaySize(tileSize - 4, tileSize - 4);
+            obstacleImage.setDepth(1); // Ensure obstacle is visible above grid
             if (!this.wallImages) this.wallImages = [];
-            this.wallImages.push({ x, y, image: wallImage });
+            this.wallImages.push({ x, y, image: obstacleImage });
         } else {
         }
     }

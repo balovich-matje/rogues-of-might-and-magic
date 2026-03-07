@@ -73,8 +73,9 @@ export class BattleScene extends Phaser.Scene {
             }
         }
 
-        // Load wall/obstacle image
+        // Load wall/obstacle images
         this.load.image('wall_img', 'images/obstacles/wall.png');
+        this.load.image('rock_img', 'images/obstacles/rock.png');
     }
 
     create(data) {
@@ -578,13 +579,13 @@ export class BattleScene extends Phaser.Scene {
             for (let y = 0; y < passageY1; y++) {
                 // Top mountain - leave some gaps
                 if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y);
+                    this.gridSystem.addObstacle(x, y, 'rock');
                 }
             }
             for (let y = passageY2 + 1; y < height; y++) {
                 // Bottom mountain - leave some gaps
                 if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y);
+                    this.gridSystem.addObstacle(x, y, 'rock');
                 }
             }
         }
@@ -593,12 +594,12 @@ export class BattleScene extends Phaser.Scene {
         for (let x = 7; x < width; x++) {
             for (let y = 0; y < passageY1; y++) {
                 if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y);
+                    this.gridSystem.addObstacle(x, y, 'rock');
                 }
             }
             for (let y = passageY2 + 1; y < height; y++) {
                 if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y);
+                    this.gridSystem.addObstacle(x, y, 'rock');
                 }
             }
         }
@@ -607,10 +608,10 @@ export class BattleScene extends Phaser.Scene {
         // Add a few obstacles at the edges of the passage for cover
         const chokePointX = 6;  // Middle column
         if (Math.random() > 0.5) {
-            this.gridSystem.addObstacle(chokePointX, passageY1);  // Top of passage
+            this.gridSystem.addObstacle(chokePointX, passageY1, 'rock');  // Top of passage
         }
         if (Math.random() > 0.5) {
-            this.gridSystem.addObstacle(chokePointX, passageY2);  // Bottom of passage
+            this.gridSystem.addObstacle(chokePointX, passageY2, 'rock');  // Bottom of passage
         }
     }
 
