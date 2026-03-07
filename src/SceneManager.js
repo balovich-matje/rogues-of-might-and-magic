@@ -43,28 +43,33 @@ class GlowManager {
 
         // Glow settings by type
         const settings = {
-            legendary: { color: 0xff8c00, alpha: 0.6, pulseSpeed: 1000 },
-            mythic: { color: 0xff3333, alpha: 0.7, pulseSpeed: 800 },
-            active: { color: 0xffffff, alpha: 0.5, pulseSpeed: 600 }
+            legendary: { color: 0xff8c00, alpha: 0.7 },
+            mythic: { color: 0xff3333, alpha: 0.8 },
+            active: { color: 0xffffff, alpha: 0.6 }
         };
 
         const config = settings[type] || settings.legendary;
 
-        // Create graphics object for glow
-        const glow = this.scene.add.graphics();
-        
+        // Create container for glow at unit position
+        const container = this.scene.add.container(unit.sprite.x, unit.sprite.y);
+
         // Draw the glow shape
+        const graphics = this.scene.add.graphics();
+        
         if (type === 'active') {
             // Dotted outline for active unit
-            this.drawDottedOutline(glow, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
+            this.drawDottedOutline(graphics, 0, 0, size, config.color, config.alpha);
         } else {
-            // Filled ellipse for legendary/mythic
-            this.drawGlowEllipse(glow, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
+            // Filled ellipse for legendary/mythic - draw multiple layers
+            this.drawGlowEllipse(graphics, 0, 0, size, config.color, config.alpha);
         }
+
+        container.add(graphics);
 
         // Store glow data
         const glowData = {
-            graphics: glow,
+            container: container,
+            graphics: graphics,
             type: type,
             unit: unit,
             config: config
@@ -72,29 +77,9 @@ class GlowManager {
 
         this.glows.set(unit, glowData);
 
-        // Add pulsing animation
-        if (type !== 'active') {
-            this.scene.tweens.add({
-                targets: glow,
-                alpha: { from: 1, to: 0.4 },
-                duration: config.pulseSpeed,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-        } else {
-            // Rotating animation for active unit
-            this.scene.tweens.add({
-                targets: glow,
-                rotation: Math.PI * 2,
-                duration: 3000,
-                repeat: -1,
-                ease: 'Linear'
-            });
-        }
-
-        // Set depth behind unit
-        glow.setDepth(unit.sprite.depth - 1);
+        // Set depth behind unit but above tiles
+        container.setDepth(5);
+        unit.sprite.setDepth(10);
 
         return glowData;
     }
@@ -141,7 +126,7 @@ class GlowManager {
     removeGlow(unit) {
         const glowData = this.glows.get(unit);
         if (glowData) {
-            glowData.graphics.destroy();
+            glowData.container.destroy();
             this.glows.delete(unit);
         }
     }
@@ -181,13 +166,13 @@ class GlowManager {
     }
 
     /**
-     * Update all glow positions (call in update loop if needed)
+     * Update all glow positions to follow units
      */
     update() {
         for (const [unit, glowData] of this.glows) {
-            if (unit.sprite && glowData.graphics) {
-                glowData.graphics.x = unit.sprite.x;
-                glowData.graphics.y = unit.sprite.y;
+            if (unit.sprite && glowData.container) {
+                glowData.container.x = unit.sprite.x;
+                glowData.container.y = unit.sprite.y;
             }
         }
     }
@@ -197,7 +182,7 @@ class GlowManager {
      */
     clear() {
         for (const glowData of this.glows.values()) {
-            glowData.graphics.destroy();
+            glowData.container.destroy();
         }
         this.glows.clear();
         this.activeUnitGlow = null;
@@ -232,6 +217,13 @@ export class BattleScene extends Phaser.Scene {
         this.combatLogOpen = false;
         this.currentStage = null;
         this.tileSize = this.tileSize;
+    }
+
+    update() {
+        // Update glow positions to follow units
+        if (this.glowManager) {
+            this.glowManager.update();
+        }
     }
 
     preload() {
