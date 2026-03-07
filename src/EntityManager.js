@@ -666,11 +666,6 @@ export class TurnSystem {
 
         this.currentUnit = this.turnQueue.shift();
 
-        // Update active unit glow
-        if (this.scene.glowManager) {
-            this.scene.glowManager.setActiveUnit(this.currentUnit);
-        }
-
         if (this.currentUnit.isDead) {
             this.nextTurn();
             return;

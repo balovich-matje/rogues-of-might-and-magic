@@ -17,173 +17,6 @@ const ENEMY_FACTIONS = {
 };
 
 // ============================================
-// GLOW MANAGER - Handles unit glow effects
-// ============================================
-class GlowManager {
-    constructor(scene) {
-        this.scene = scene;
-        this.glows = new Map(); // unit -> glow object
-        this.activeUnitGlow = null;
-    }
-
-    /**
-     * Add a glow effect to a unit
-     * @param {Unit} unit - The unit to add glow to
-     * @param {string} type - 'legendary' (orange), 'mythic' (red), or 'active' (white)
-     */
-    addGlow(unit, type) {
-        if (!unit || !unit.sprite) return;
-
-        // Remove existing glow for this unit
-        this.removeGlow(unit);
-
-        const tileSize = this.scene.tileSize || 64;
-        const bossSize = unit.bossSize || 1;
-        const size = tileSize * bossSize;
-
-        // Glow settings by type
-        const settings = {
-            legendary: { color: 0xff6600, alpha: 0.8 },
-            mythic: { color: 0xff0000, alpha: 0.9 },
-            active: { color: 0xffffff, alpha: 0.5 }
-        };
-
-        const config = settings[type] || settings.legendary;
-
-        // Create graphics object directly (no container)
-        const graphics = this.scene.add.graphics();
-
-        if (type === 'active') {
-            // Simple circle outline for active unit
-            this.drawActiveRing(graphics, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
-        } else {
-            // Glowing ellipse on ground for legendary/mythic
-            this.drawGroundGlow(graphics, unit.sprite.x, unit.sprite.y, size, config.color, config.alpha);
-        }
-
-        // Store glow data
-        const glowData = {
-            graphics: graphics,
-            type: type,
-            unit: unit,
-            config: config
-        };
-
-        this.glows.set(unit, glowData);
-
-        // Set depth behind unit but above tiles
-        graphics.setDepth(5);
-
-        return glowData;
-    }
-
-    /**
-     * Draw a glow on the ground behind the unit
-     */
-    drawGroundGlow(graphics, x, y, size, color, alpha) {
-        const width = size * 0.8;
-        const height = size * 0.5;
-        const offsetY = size * 0.15;
-
-        // Draw outer glow (larger, more transparent)
-        graphics.fillStyle(color, alpha * 0.4);
-        graphics.fillEllipse(x, y + offsetY, width * 1.5, height * 1.5);
-
-        // Draw inner glow (smaller, more opaque)
-        graphics.fillStyle(color, alpha * 0.7);
-        graphics.fillEllipse(x, y + offsetY, width, height);
-
-        // Draw center highlight
-        graphics.fillStyle(color, alpha);
-        graphics.fillEllipse(x, y + offsetY, width * 0.6, height * 0.6);
-    }
-
-    /**
-     * Draw a simple ring for active unit
-     */
-    drawActiveRing(graphics, x, y, size, color, alpha) {
-        const radius = size * 0.4;
-        const offsetY = size * 0.1;
-
-        // Draw ring
-        graphics.lineStyle(3, color, alpha);
-        graphics.strokeCircle(x, y + offsetY, radius);
-
-        // Draw inner fill (subtle)
-        graphics.fillStyle(color, alpha * 0.2);
-        graphics.fillCircle(x, y + offsetY, radius);
-    }
-
-    /**
-     * Remove glow from a unit
-     */
-    removeGlow(unit) {
-        const glowData = this.glows.get(unit);
-        if (glowData) {
-            glowData.graphics.destroy();
-            this.glows.delete(unit);
-        }
-    }
-
-    /**
-     * Set the active unit (white ring glow)
-     */
-    setActiveUnit(unit) {
-        // Remove old active unit glow
-        if (this.activeUnitGlow) {
-            this.removeGlow(this.activeUnitGlow);
-            this.activeUnitGlow = null;
-        }
-
-        // Add new active unit glow
-        if (unit) {
-            this.addGlow(unit, 'active');
-            this.activeUnitGlow = unit;
-        }
-    }
-
-    /**
-     * Apply legendary/mythic glow based on unit's perks
-     */
-    applyPerkGlow(unit) {
-        if (!unit) return;
-
-        // Check for mythic first (takes precedence)
-        if (unit.hasDivineRetribution || unit.hasArcaneFocus) {
-            this.addGlow(unit, 'mythic');
-        }
-        // Then check for legendary
-        else if (unit.hasDoubleStrike || unit.hasCleave || unit.hasRicochet || 
-                 unit.hasPiercing || unit.hasBackstab) {
-            this.addGlow(unit, 'legendary');
-        }
-    }
-
-    /**
-     * Update all glow positions to follow units
-     */
-    update() {
-        for (const [unit, glowData] of this.glows) {
-            if (unit.sprite && glowData.graphics) {
-                glowData.graphics.x = unit.sprite.x;
-                glowData.graphics.y = unit.sprite.y;
-            }
-        }
-    }
-
-    /**
-     * Clear all glows
-     */
-    clear() {
-        for (const glowData of this.glows.values()) {
-            glowData.graphics.destroy();
-        }
-        this.glows.clear();
-        this.activeUnitGlow = null;
-    }
-}
-
-// ============================================
 // BATTLE SCENE
 // ============================================
 export class BattleScene extends Phaser.Scene {
@@ -211,13 +44,6 @@ export class BattleScene extends Phaser.Scene {
         this.combatLogOpen = false;
         this.currentStage = null;
         this.tileSize = this.tileSize;
-    }
-
-    update() {
-        // Update glow positions to follow units
-        if (this.glowManager) {
-            this.glowManager.update();
-        }
     }
 
     preload() {
@@ -262,9 +88,6 @@ export class BattleScene extends Phaser.Scene {
     create(data) {
         document.getElementById('left-panel').classList.remove('hidden', 'collapsed');
         document.getElementById('right-panel').classList.remove('hidden', 'collapsed');
-        
-        // Initialize glow manager
-        this.glowManager = new GlowManager(this);
         
         // Initialize systems
         this.unitManager = new UnitManager(this);
@@ -404,13 +227,6 @@ export class BattleScene extends Phaser.Scene {
 
         // Create enemy units
         this.createEnemyUnits();
-
-        // Apply perk glows to all units (after sprites are created)
-        this.time.delayedCall(100, () => {
-            for (const unit of this.unitManager.units) {
-                this.glowManager.applyPerkGlow(unit);
-            }
-        });
 
         // Add click handler for spell targeting and abilities
         this.input.on('pointerdown', (pointer) => {
@@ -2563,11 +2379,6 @@ export class BattleScene extends Phaser.Scene {
             const targetUnit = this.selectedRewards.legendary.targetUnit;
             if (legendaryEffect && targetUnit) {
                 legendaryEffect.effect(targetUnit);
-                // Apply glow effect
-                if (this.glowManager) {
-                    const glowType = legendaryEffect.rarity === 'mythic' ? 'mythic' : 'legendary';
-                    this.glowManager.addGlow(targetUnit, glowType);
-                }
                 this.uiManager.showFloatingText(`${this.selectedRewards.legendary.effectData.name} Acquired!`, 400, 250, '#D4A574');
             }
         }
