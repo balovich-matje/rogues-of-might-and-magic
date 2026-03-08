@@ -434,7 +434,12 @@ export class BattleScene extends Phaser.Scene {
 
         let remainingPoints = totalPoints;
         const spawnedEnemies = [];
-        const availablePositions = this.getEnemySpawnPositions();
+        let availablePositions = this.getEnemySpawnPositions();
+        
+        // Filter out positions that have obstacles (rocks)
+        availablePositions = availablePositions.filter(pos => {
+            return !this.gridSystem.isObstacle(pos.x, pos.y);
+        });
 
         const statMultiplier = 1 + (this.battleNumber - 1) * 0.15;
 
@@ -492,11 +497,23 @@ export class BattleScene extends Phaser.Scene {
 
         const availablePositions = this.getEnemySpawnPositions();
         // Filter positions that can fit 2x2 bosses (need at least 2 columns from right edge)
-        const validPositions = availablePositions.filter(pos => {
+        // AND are not blocked by obstacles
+        let validPositions = availablePositions.filter(pos => {
             const template = UNIT_TYPES[selectedBoss];
             const size = template.bossSize || 1;
             // Check if the entire boss area is within bounds and unoccupied
-            return this.unitManager.isValidPlacement(pos.x, pos.y, size);
+            if (!this.unitManager.isValidPlacement(pos.x, pos.y, size)) {
+                return false;
+            }
+            // Check that no tile in the boss area has an obstacle
+            for (let dy = 0; dy < size; dy++) {
+                for (let dx = 0; dx < size; dx++) {
+                    if (this.gridSystem.isObstacle(pos.x + dx, pos.y + dy)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         });
 
         if (validPositions.length === 0) {
@@ -646,17 +663,16 @@ export class BattleScene extends Phaser.Scene {
 
         // Density gradient based on Y position for chokepoint effect
         // For Mountain Pass (19x19 grid, height=19):
-        // Top edge (rows 0-3): 35% density
-        // Upper area (rows 4-6): 25% density
-        // Middle chokepoint (rows 7-11): 10% density - OPEN
-        // Lower area (rows 12-14): 25% density
-        // Bottom edge (rows 15-18): 35% density
+        // Row 0-1: 80-90% rocks (dense edge)
+        // Row 2: 30% rocks (transition)
+        // Row 3+: Open (chokepoint)
+        // Same pattern from bottom (rows 16-18 mirror rows 0-2)
         const rockChance = (y) => {
-            if (y < 4) return 0.35;           // Top edge
-            if (y < 7) return 0.25;           // Upper
-            if (y < 12) return 0.10;          // Middle (chokepoint - OPEN)
-            if (y < 15) return 0.25;          // Lower
-            return 0.35;                       // Bottom edge
+            if (y <= 1) return 0.85;          // Top edge (rows 0-1): 85% density
+            if (y === 2) return 0.30;          // Row 2: 30% transition
+            if (y < height - 2) return 0.05;   // Middle (rows 3 to height-3): nearly open
+            if (y === height - 2) return 0.30; // Row height-2: 30% transition
+            return 0.85;                       // Bottom edge (last 2 rows): 85% density
         };
 
         // Generate rocks with constraints
@@ -765,26 +781,28 @@ export class BattleScene extends Phaser.Scene {
             }
         } else if (this.currentStage.spawnLogic === 'right_flank') {
             // Mountain Pass: Enemies spawn on right side and top/bottom corners
+            // IMPORTANT: Avoid rows 0-2 and rows height-3 to height-1 (dense rocks)
             const width = this.gridSystem.width;
             const height = this.gridSystem.height;
-            const pSize = 3; // Larger perimeter for more spawn options
             
-            // Right side (main spawn area)
-            for (let y = 0; y < height; y++) {
+            // Right side (main spawn area) - start from row 3 to avoid top rocks
+            for (let y = 3; y < height - 3; y++) {
                 for (let x = width - 4; x < width; x++) {
                     positions.push({ x, y });
                 }
             }
             
-            // Top-left corner (flanking position)
-            for (let y = 0; y < pSize; y++) {
+            // Top-left area (flanking position) - avoid dense rock rows 0-2
+            // Use row 3 as the safe starting point
+            for (let y = 3; y < 6; y++) {
                 for (let x = 4; x < 7; x++) {
                     positions.push({ x, y });
                 }
             }
             
-            // Bottom-left corner (flanking position)
-            for (let y = height - pSize; y < height; y++) {
+            // Bottom-left area (flanking position) - avoid dense rock rows height-3 to height-1
+            // Use row height-4 as the safe ending point
+            for (let y = height - 6; y < height - 3; y++) {
                 for (let x = 4; x < 7; x++) {
                     positions.push({ x, y });
                 }

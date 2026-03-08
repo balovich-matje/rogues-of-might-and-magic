@@ -103,6 +103,12 @@ export class GridSystem {
         const { gridX, gridY } = tile;
         const clickedUnit = this.scene.unitManager.getUnitAt(gridX, gridY);
 
+        // If a unit ability is active (like Sorcerer Fireball), execute it
+        if (this.scene.activeUnitAbility) {
+            this.scene.executeUnitAbilityAt(gridX, gridY);
+            return;
+        }
+
         // If a spell is selected, ONLY allow spell casting - block all other actions
         if (this.scene.spellSystem.activeSpell) {
             const spell = SPELLS[this.scene.spellSystem.activeSpell];
