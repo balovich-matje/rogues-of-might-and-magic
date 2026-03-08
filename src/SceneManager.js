@@ -563,12 +563,12 @@ export class BattleScene extends Phaser.Scene {
         const wallStart = spawnStart - 1;  // 4
         const wallEnd = spawnEnd + 1;      // 10
         
-        // Create gaps in the wall border (at center of each side)
+        // Create gaps in the wall border (2 cells wide at center of each side)
         const gapPositions = [
-            { x: center, y: wallStart },      // Top gap
-            { x: center, y: wallEnd },        // Bottom gap
-            { x: wallStart, y: center },      // Left gap
-            { x: wallEnd, y: center }         // Right gap
+            { x: center - 1, y: wallStart }, { x: center, y: wallStart },      // Top gap (2 cells)
+            { x: center - 1, y: wallEnd }, { x: center, y: wallEnd },          // Bottom gap (2 cells)
+            { x: wallStart, y: center - 1 }, { x: wallStart, y: center },      // Left gap (2 cells)
+            { x: wallEnd, y: center - 1 }, { x: wallEnd, y: center }           // Right gap (2 cells)
         ];
         const gapSet = new Set(gapPositions.map(g => `${g.x},${g.y}`));
         

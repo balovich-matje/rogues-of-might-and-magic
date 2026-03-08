@@ -587,13 +587,13 @@
             const wallStart = spawnStart - 1;
             const wallEnd = spawnEnd + 1;
             
-            // Create gaps in the wall border (1-2 cells) to allow passage
+            // Create gaps in the wall border (2 cells wide at center of each side)
             // Gaps at top, bottom, left, right of the border
             const gapPositions = [
-                { x: center, y: wallStart },      // Top gap
-                { x: center, y: wallEnd },        // Bottom gap
-                { x: wallStart, y: center },      // Left gap
-                { x: wallEnd, y: center }         // Right gap
+                { x: center - 1, y: wallStart }, { x: center, y: wallStart },      // Top gap (2 cells)
+                { x: center - 1, y: wallEnd }, { x: center, y: wallEnd },          // Bottom gap (2 cells)
+                { x: wallStart, y: center - 1 }, { x: wallStart, y: center },      // Left gap (2 cells)
+                { x: wallEnd, y: center - 1 }, { x: wallEnd, y: center }           // Right gap (2 cells)
             ];
             const gapSet = new Set(gapPositions.map(g => `${g.x},${g.y}`));
             
@@ -789,14 +789,14 @@
                     const y = obs.y * tileSize + tileSize / 2;
                     
                     if (obs.type === 'wall') {
-                        // Castle wall - gray block with random rotation
+                        // Castle wall - gray block with random vertical flip
                         const wall = this.add.rectangle(x, y, tileSize - 2, tileSize - 2, 0x5a5a5a);
                         const wallDetail = this.add.rectangle(x, y, tileSize - 6, tileSize - 6, 0x6a6a6a);
                         
-                        // Random 180° rotation for visual variety
+                        // Random vertical flip for visual variety (mirror, not rotation)
                         if (Math.random() > 0.5) {
-                            wall.setRotation(Math.PI);
-                            wallDetail.setRotation(Math.PI);
+                            wall.setFlipY(true);
+                            wallDetail.setFlipY(true);
                         }
                         
                         this.obstacleContainer.add([wall, wallDetail]);
@@ -836,10 +836,10 @@
                         rock.setScale(scaleX, scaleY);
                         rockDetail.setScale(scaleX, scaleY);
                         
-                        // Random 180° rotation for visual variety
+                        // Random vertical flip for visual variety (mirror, not rotation)
                         if (Math.random() > 0.5) {
-                            rock.setRotation(Math.PI);
-                            rockDetail.setRotation(Math.PI);
+                            rock.setFlipY(true);
+                            rockDetail.setFlipY(true);
                         }
                         
                         this.obstacleContainer.add([rock, rockDetail]);
