@@ -564,7 +564,7 @@
                         scene.regenerateGrid();
                     }
 
-                    log(`Loaded map: ${config.name} (${config.gridSize}x${config.gridSize})`, 'success');
+                    log(`Loaded map: ${config.name} (${config.gridSize}x${config.gridSize}) with ${window.currentMap.obstacles.length} obstacles`, 'success');
                     return { success: true, map: config.name, obstacles: window.currentMap.obstacles.length };
                 } catch (e) {
                     log(`Error loading map: ${e.message}`, 'error');
@@ -650,7 +650,7 @@
             };
             
             // Generate rocks with constraints
-            const rockDensity = 0.12;  // 12% coverage
+            const rockDensity = 0.15;  // 15% coverage
             for (let y = 0; y < size; y++) {
                 for (let x = 0; x < size; x++) {
                     // Skip spawn area
@@ -658,7 +658,7 @@
                     
                     // Random placement with density
                     if (Math.random() < rockDensity) {
-                        // Check if this would create a 2x2 block
+                        // Check if this would create a 2x2 block (traps 1x1 units)
                         if (!creates2x2Block(x, y)) {
                             rockSet.add(`${x},${y}`);
                             obstacles.push({ x, y, type: 'rock' });
@@ -667,21 +667,31 @@
                 }
             }
             
-            // Ensure paths exist - verify connectivity using flood fill
-            ensurePathExists(size, obstacles, isSpawnArea);
+            // Simple path check: ensure center is connected to edges
+            // Just verify we haven't accidentally blocked everything
+            const reachable = countReachable(size, obstacles, center, center);
+            const totalCells = size * size - 25; // minus spawn area
+            
+            // If less than 50% of map is reachable, we have a problem
+            if (reachable < totalCells * 0.5) {
+                console.warn('[DEV] Map connectivity low, reducing rocks');
+                // Remove some rocks to improve connectivity
+                while (obstacles.length > totalCells * 0.1 && reachable < totalCells * 0.7) {
+                    const idx = Math.floor(Math.random() * obstacles.length);
+                    const removed = obstacles.splice(idx, 1)[0];
+                    rockSet.delete(`${removed.x},${removed.y}`);
+                }
+            }
             
             window.currentMap.obstacles = obstacles;
         }
 
-        // Ensure at least one path exists from spawn to everywhere
-        function ensurePathExists(size, obstacles, isSpawnAreaFn) {
+        // Count reachable cells from a starting position
+        function countReachable(size, obstacles, startX, startY) {
             const obstacleSet = new Set(obstacles.map(o => `${o.x},${o.y}`));
-            const center = Math.floor(size / 2);
-            
-            // Check connectivity using BFS from center
             const visited = new Set();
-            const queue = [[center, center]];
-            visited.add(`${center},${center}`);
+            const queue = [[startX, startY]];
+            visited.add(`${startX},${startY}`);
             
             const directions = [[0,1], [0,-1], [1,0], [-1,0]];
             
@@ -702,36 +712,7 @@
                 }
             }
             
-            // Remove any rocks that block 2x2 boss movement
-            // A boss needs a 2x2 clear area to exist
-            const bossSafeCells = new Set();
-            
-            for (let y = 0; y < size - 1; y++) {
-                for (let x = 0; x < size - 1; x++) {
-                    // Check if this 2x2 area is clear
-                    const cells = [[x,y], [x+1,y], [x,y+1], [x+1,y+1]];
-                    const isClear = cells.every(([cx, cy]) => !obstacleSet.has(`${cx},${cy}`));
-                    
-                    if (isClear) {
-                        cells.forEach(([cx, cy]) => bossSafeCells.add(`${cx},${cy}`));
-                    }
-                }
-            }
-            
-            // Remove rocks that are not boss-safe unless they're far from spawn
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                const key = `${obs.x},${obs.y}`;
-                
-                // If this rock isn't in a boss-safe area and is within reasonable distance
-                const distFromCenter = Math.abs(obs.x - center) + Math.abs(obs.y - center);
-                
-                // Remove rocks that would trap areas
-                if (!bossSafeCells.has(key) && distFromCenter < size - 2) {
-                    obstacles.splice(i, 1);
-                    obstacleSet.delete(key);
-                }
-            }
+            return visited.size;
         }
         
         // Phaser scene
