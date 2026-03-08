@@ -263,6 +263,19 @@ export class Unit {
             }
         }
 
+        // Void Herald death: Remove slow from all player units
+        if (this.type === 'VOID_HERALD' && scene && scene.unitManager) {
+            const playerUnits = scene.unitManager.getPlayerUnits();
+            for (const player of playerUnits) {
+                if (player.voidSlowRounds > 0) {
+                    player.voidSlowRounds = 0;
+                    player.moveRange = UNIT_TYPES[player.type].moveRange;
+                    scene.uiManager.showBuffText(player, 'SPEED RESTORED!', '#4CAF50');
+                }
+            }
+            scene.addCombatLog('Void Herald defeated! Movement speed restored!', 'buff');
+        }
+
         // Check victory condition
         if (scene && scene.unitManager) {
             const enemies = scene.unitManager.getEnemyUnits();
@@ -394,7 +407,13 @@ export class Unit {
             }
         }
 
-        // Void Herald slow is permanent for the battle - no decay
+        // Void Herald slow decay (4 turn duration)
+        if (this.voidSlowRounds > 0) {
+            this.voidSlowRounds--;
+            if (this.voidSlowRounds === 0) {
+                this.moveRange = UNIT_TYPES[this.type].moveRange;
+            }
+        }
     }
 
     getDisplayStats() {
@@ -411,7 +430,7 @@ export class Unit {
         else if (this.regenerateRounds === -1) buffs.push(`Regen(∞)`);
         if (this.iceSlowRounds > 0) buffs.push(`IceSlow(${this.iceSlowRounds})`);
         if (this.slowDebuffRounds > 0) buffs.push(`Crippled(${this.slowDebuffRounds})`);
-        if (this.voidSlowRounds > 0) buffs.push(`VoidSlow(∞)`);
+        if (this.voidSlowRounds > 0) buffs.push(`VoidSlow(${this.voidSlowRounds})`);
 
         const buffDisplay = buffs.length > 0 ? `<br>✨ ${buffs.join(', ')}` : '';
 
@@ -975,7 +994,7 @@ export class TurnSystem {
         const unit = this.currentUnit;
         const scene = this.scene;
 
-        // Apply mass slow on first turn
+        // Apply mass slow on first turn (4 turn duration or until boss dies)
         if (!unit.voidSlowApplied) {
             unit.voidSlowApplied = true;
             scene.uiManager.showFloatingText('🌑 VOID SLOW! Movement reduced!', 400, 200, '#6B5B8B');
@@ -984,7 +1003,7 @@ export class TurnSystem {
                 // Reduce movement by 3, minimum 1
                 const slowAmount = 3;
                 player.moveRange = Math.max(1, player.moveRange - slowAmount);
-                player.voidSlowRounds = 999; // Permanent for this battle
+                player.voidSlowRounds = 4; // Lasts 4 turns or until boss dies
                 scene.uiManager.showBuffText(player, 'SLOWED!', '#6B5B8B');
             }
             scene.addCombatLog('Void Herald slows all enemies with void energy!', 'debuff');
