@@ -60,6 +60,9 @@ export class Unit {
         this.slowDebuffRounds = 0;
         this.slowDebuffValue = 0;
 
+        // Void Herald slow tracking
+        this.voidSlowRounds = 0;
+
         // Permanent stat modifiers from rewards
         this.statModifiers = null;
 
@@ -390,6 +393,8 @@ export class Unit {
                 this.slowDebuffValue = 0;
             }
         }
+
+        // Void Herald slow is permanent for the battle - no decay
     }
 
     getDisplayStats() {
@@ -406,6 +411,7 @@ export class Unit {
         else if (this.regenerateRounds === -1) buffs.push(`Regen(∞)`);
         if (this.iceSlowRounds > 0) buffs.push(`IceSlow(${this.iceSlowRounds})`);
         if (this.slowDebuffRounds > 0) buffs.push(`Crippled(${this.slowDebuffRounds})`);
+        if (this.voidSlowRounds > 0) buffs.push(`VoidSlow(∞)`);
 
         const buffDisplay = buffs.length > 0 ? `<br>✨ ${buffs.join(', ')}` : '';
 
@@ -566,7 +572,7 @@ export class UnitManager {
         return this.units.find(u => u.occupiesTile(x, y) && !u.isDead && u.health > 0);
     }
 
-    // Check if a position is valid for placing a unit (considers 2x2 units)
+    // Check if a position is valid for placing a unit (considers 2x2)
     isValidPlacement(x, y, bossSize = 1) {
         for (let dy = 0; dy < bossSize; dy++) {
             for (let dx = 0; dx < bossSize; dx++) {
@@ -867,6 +873,7 @@ export class TurnSystem {
                 const adjacentSpots = [];
                 for (let y = unit.gridY - 1; y <= unit.gridY + unit.bossSize; y++) {
                     for (let x = unit.gridX - 1; x <= unit.gridX + unit.bossSize; x++) {
+                        if (x < 0 || x >= this.scene.gridSystem.width || y < 0 || y >= this.scene.gridSystem.height) continue;
                         if (this.isValidMoveForUnit(targetToPull, x, y)) {
                             adjacentSpots.push({ x, y });
                         }
@@ -963,7 +970,7 @@ export class TurnSystem {
         scene.time.delayedCall(1200, () => this.nextTurn());
     }
 
-    // Void Herald AI: Mass slow at start, casts voidball each turn
+    // Void Herald AI: Mass slow at start, casts voidball each turn targeting grouped enemies
     executeVoidHeraldTurn(playerUnits) {
         const unit = this.currentUnit;
         const scene = this.scene;
@@ -983,20 +990,29 @@ export class TurnSystem {
             scene.addCombatLog('Void Herald slows all enemies with void energy!', 'debuff');
         }
 
-        // Find nearest player for targeting
-        let nearest = null;
-        let minDist = Infinity;
+        // Find best target for voidball - prioritize grouped enemies
+        let bestTarget = null;
+        let maxHits = 0;
+        const voidballRange = 6;
+
         for (const player of playerUnits) {
             const dist = this.getDistanceToUnit(unit, player);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = player;
+            if (dist <= voidballRange) {
+                // Count enemies in 3x3 area around this target
+                let hits = 0;
+                for (const other of playerUnits) {
+                    const aoeDist = Math.abs(other.gridX - player.gridX) + Math.abs(other.gridY - player.gridY);
+                    if (aoeDist <= 1) hits++;
+                }
+                if (hits > maxHits) {
+                    maxHits = hits;
+                    bestTarget = player;
+                }
             }
         }
 
-        // Cast voidball (38 damage fireball-like) if in range
-        const voidballRange = 6;
-        if (minDist <= voidballRange && unit.canAttack()) {
+        // Cast voidball (38 damage fireball-like) if we have a target
+        if (bestTarget && unit.canAttack()) {
             unit.hasAttacked = true;
             scene.uiManager.showBuffText(unit, 'VOIDBALL!', '#6B5B8B');
 
@@ -1009,14 +1025,14 @@ export class TurnSystem {
 
             const angle = Phaser.Math.Angle.Between(
                 unit.sprite.x, unit.sprite.y,
-                nearest.sprite.x, nearest.sprite.y
+                bestTarget.sprite.x, bestTarget.sprite.y
             );
             projectile.setRotation(angle);
 
             scene.tweens.add({
                 targets: projectile,
-                x: nearest.sprite.x,
-                y: nearest.sprite.y,
+                x: bestTarget.sprite.x,
+                y: bestTarget.sprite.y,
                 duration: 300,
                 ease: 'Power2',
                 onComplete: () => {
@@ -1025,7 +1041,7 @@ export class TurnSystem {
                     // Deal 38 damage in 3x3 AoE
                     const voidDamage = 38;
                     for (const player of playerUnits) {
-                        const aoeDist = Math.abs(player.gridX - nearest.gridX) + Math.abs(player.gridY - nearest.gridY);
+                        const aoeDist = Math.abs(player.gridX - bestTarget.gridX) + Math.abs(player.gridY - bestTarget.gridY);
                         if (aoeDist <= 1) {
                             player.takeDamage(voidDamage, true, unit);
                             scene.uiManager.showDamageText(player, voidDamage);
@@ -1041,6 +1057,17 @@ export class TurnSystem {
 
         // Move to get in range
         if (unit.canMove()) {
+            // Find nearest player to move towards
+            let nearest = null;
+            let minDist = Infinity;
+            for (const player of playerUnits) {
+                const dist = this.getDistanceToUnit(unit, player);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = player;
+                }
+            }
+
             const path = this.findPath(unit, nearest.gridX, nearest.gridY);
             if (path && path.length > 1) {
                 const nextStep = path[1];
@@ -1192,7 +1219,7 @@ export class TurnSystem {
         return minDist;
     }
 
-    // Orc Shaman King AI: Cast spells and keep distance
+    // Orc Shaman King AI: Chain Lightning main skill, run away from melee, maintain distance
     executeShamanKingTurn(playerUnits) {
         const unit = this.currentUnit;
         const scene = this.scene;
@@ -1208,83 +1235,8 @@ export class TurnSystem {
             }
         }
 
-        // Try to cast chain lightning first (if mana available and units clustered)
-        const manaCost = Math.floor(SPELLS.chain_lightning.manaCost * scene.manaCostMultiplier);
-        if (scene.mana >= manaCost && unit.canAttack()) {
-            // Find best target for chain lightning (most enemies in chain range)
-            let bestTarget = null;
-            let maxChains = 0;
-
-            for (const player of playerUnits) {
-                const dist = this.getDistanceToUnit(unit, player);
-                if (dist <= unit.rangedRange) {
-                    // Count how many other enemies are within chain range (2 tiles)
-                    let chainCount = 0;
-                    for (const other of playerUnits) {
-                        if (other !== player) {
-                            const chainDist = Math.abs(other.gridX - player.gridX) + Math.abs(other.gridY - player.gridY);
-                            if (chainDist <= 2) chainCount++;
-                        }
-                    }
-                    if (chainCount > maxChains) {
-                        maxChains = chainCount;
-                        bestTarget = player;
-                    }
-                }
-            }
-
-            if (bestTarget && maxChains >= 1) {
-                unit.hasAttacked = true;
-                scene.uiManager.showBuffText(unit, 'CHAIN LIGHTNING!', '#9B59B6');
-                scene.spendMana(manaCost);
-                this.castChainLightning(unit, bestTarget);
-                scene.time.delayedCall(1000, () => this.nextTurn());
-                return;
-            }
-        }
-
-        // Try fireball if chain lightning not optimal
-        const fireballCost = Math.floor(SPELLS.fireball.manaCost * scene.manaCostMultiplier);
-        if (scene.mana >= fireballCost && unit.canAttack()) {
-            // Find best AoE target
-            let bestTarget = null;
-            let maxHits = 0;
-
-            for (const player of playerUnits) {
-                const dist = this.getDistanceToUnit(unit, player);
-                if (dist <= unit.rangedRange) {
-                    // Count enemies in 3x3 area around this target
-                    let hits = 0;
-                    for (const other of playerUnits) {
-                        const aoeDist = Math.abs(other.gridX - player.gridX) + Math.abs(other.gridY - player.gridY);
-                        if (aoeDist <= 1) hits++;
-                    }
-                    if (hits > maxHits) {
-                        maxHits = hits;
-                        bestTarget = player;
-                    }
-                }
-            }
-
-            if (bestTarget && maxHits >= 2) {
-                unit.hasAttacked = true;
-                scene.uiManager.showBuffText(unit, 'FIREBALL!', '#E74C3C');
-                scene.spendMana(fireballCost);
-                this.castFireball(unit, bestTarget);
-                scene.time.delayedCall(1000, () => this.nextTurn());
-                return;
-            }
-        }
-
-        // Try ranged attack if available
-        if (unit.rangedRange > 0 && minDist <= unit.rangedRange && unit.canAttack()) {
-            scene.performRangedAttack(unit, nearest);
-            scene.time.delayedCall(800, () => this.nextTurn());
-            return;
-        }
-
-        // Move to keep distance - prefer staying at ranged range
-        if (unit.canMove()) {
+        // PRIORITY 1: If enemy within 2 tiles, RUN AWAY before casting
+        if (minDist <= 2 && unit.canMove()) {
             let bestX = unit.gridX;
             let bestY = unit.gridY;
             let bestScore = -Infinity;
@@ -1298,16 +1250,16 @@ export class TurnSystem {
 
                 // Calculate score for this position
                 const distToNearest = Math.abs(nearest.gridX - x) + Math.abs(nearest.gridY - y);
-                // Prefer positions at ranged range distance, away from melee
+                // Prioritize escaping melee range
                 let score = 0;
                 if (distToNearest >= 3 && distToNearest <= unit.rangedRange) {
-                    score = 100; // Ideal range
+                    score = 200; // Ideal range - preferred
                 } else if (distToNearest > unit.rangedRange) {
-                    score = 50; // Too far but safe
-                } else if (distToNearest > 1) {
-                    score = 10; // Suboptimal but not in melee
+                    score = 150; // Too far but safe
+                } else if (distToNearest > 2) {
+                    score = 100; // Getting away from melee
                 } else {
-                    score = -100; // In melee range, bad
+                    score = -100; // Still in danger zone
                 }
 
                 if (score > bestScore) {
@@ -1333,29 +1285,179 @@ export class TurnSystem {
                 }
             }
 
-            // Move towards best position
+            // Move away from enemies
             if (bestX !== unit.gridX || bestY !== unit.gridY) {
-                // Use simple path towards best position (Shaman King moves once per turn)
                 const dx = Math.sign(bestX - unit.gridX);
                 const dy = Math.sign(bestY - unit.gridY);
 
                 if (dx !== 0 && this.isValidMoveForUnit(unit, unit.gridX + dx, unit.gridY)) {
                     scene.moveUnitAI(unit, unit.gridX + dx, unit.gridY);
-                    unit.hasMoved = true;
                 } else if (dy !== 0 && this.isValidMoveForUnit(unit, unit.gridX, unit.gridY + dy)) {
                     scene.moveUnitAI(unit, unit.gridX, unit.gridY + dy);
-                    unit.hasMoved = true;
                 }
+                unit.hasMoved = true;
+
+                // Show escape text
+                scene.uiManager.showBuffText(unit, 'RETREAT!', '#9B59B6');
             } else {
                 unit.hasMoved = true;
             }
+
+            // Re-check distance after moving
+            const newDist = this.getDistanceToUnit(unit, nearest);
+
+            // If still in melee range and can attack, use melee as last resort
+            if (newDist <= 1 && unit.canAttack()) {
+                scene.performAttack(unit, nearest);
+                scene.time.delayedCall(800, () => this.nextTurn());
+                return;
+            }
         }
 
-        // Try ranged attack again after moving
-        const newDist = this.getDistanceToUnit(unit, nearest);
-        if (unit.canAttack() && newDist <= unit.rangedRange) {
+        // PRIORITY 2: Cast Chain Lightning as MAIN skill (if mana available)
+        const manaCost = Math.floor(SPELLS.chain_lightning.manaCost * scene.manaCostMultiplier);
+        if (scene.mana >= manaCost && unit.canAttack()) {
+            // Find best target for chain lightning (most enemies in chain range)
+            let bestTarget = null;
+            let maxChains = 0;
+
+            for (const player of playerUnits) {
+                const dist = this.getDistanceToUnit(unit, player);
+                if (dist <= unit.rangedRange) {
+                    // Count how many other enemies are within chain range (2 tiles)
+                    let chainCount = 0;
+                    for (const other of playerUnits) {
+                        if (other !== player) {
+                            const chainDist = Math.abs(other.gridX - player.gridX) + Math.abs(other.gridY - player.gridY);
+                            if (chainDist <= 2) chainCount++;
+                        }
+                    }
+                    if (chainCount > maxChains) {
+                        maxChains = chainCount;
+                        bestTarget = player;
+                    }
+                }
+            }
+
+            // Cast chain lightning even with 0 chains - it's his main skill
+            if (bestTarget) {
+                unit.hasAttacked = true;
+                scene.uiManager.showBuffText(unit, 'CHAIN LIGHTNING!', '#9B59B6');
+                scene.spendMana(manaCost);
+                this.castChainLightning(unit, bestTarget);
+                scene.time.delayedCall(1000, () => this.nextTurn());
+                return;
+            }
+        }
+
+        // PRIORITY 3: Cast Fireball as secondary option
+        const fireballCost = Math.floor(SPELLS.fireball.manaCost * scene.manaCostMultiplier);
+        if (scene.mana >= fireballCost && unit.canAttack()) {
+            let bestTarget = null;
+            let maxHits = 0;
+
+            for (const player of playerUnits) {
+                const dist = this.getDistanceToUnit(unit, player);
+                if (dist <= unit.rangedRange) {
+                    let hits = 0;
+                    for (const other of playerUnits) {
+                        const aoeDist = Math.abs(other.gridX - player.gridX) + Math.abs(other.gridY - player.gridY);
+                        if (aoeDist <= 1) hits++;
+                    }
+                    if (hits > maxHits) {
+                        maxHits = hits;
+                        bestTarget = player;
+                    }
+                }
+            }
+
+            if (bestTarget && maxHits >= 1) {
+                unit.hasAttacked = true;
+                scene.uiManager.showBuffText(unit, 'FIREBALL!', '#E74C3C');
+                scene.spendMana(fireballCost);
+                this.castFireball(unit, bestTarget);
+                scene.time.delayedCall(1000, () => this.nextTurn());
+                return;
+            }
+        }
+
+        // PRIORITY 4: Ranged attack if available
+        const newMinDist = this.getDistanceToUnit(unit, nearest);
+        if (unit.rangedRange > 0 && newMinDist <= unit.rangedRange && newMinDist > 1 && unit.canAttack()) {
+            scene.performRangedAttack(unit, nearest);
+            scene.time.delayedCall(800, () => this.nextTurn());
+            return;
+        }
+
+        // PRIORITY 5: Maintain optimal distance (3 to rangedRange tiles away)
+        if (unit.canMove() && !unit.hasMoved) {
+            let bestX = unit.gridX;
+            let bestY = unit.gridY;
+            let bestScore = -Infinity;
+
+            const visited = new Set([`${unit.gridX},${unit.gridY}`]);
+            const queue = [{ x: unit.gridX, y: unit.gridY, moves: 0 }];
+
+            while (queue.length > 0) {
+                const { x, y, moves } = queue.shift();
+
+                const distToNearest = Math.abs(nearest.gridX - x) + Math.abs(nearest.gridY - y);
+                let score = 0;
+                if (distToNearest >= 3 && distToNearest <= unit.rangedRange) {
+                    score = 100; // Ideal range
+                } else if (distToNearest > unit.rangedRange) {
+                    score = 50; // Too far but safe
+                } else if (distToNearest > 1) {
+                    score = 10; // Suboptimal but not in melee
+                } else {
+                    score = -100; // In melee range, bad
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestX = x;
+                    bestY = y;
+                }
+
+                if (moves < unit.moveRange) {
+                    const neighbors = [
+                        { x: x + 1, y }, { x: x - 1, y },
+                        { x, y: y + 1 }, { x, y: y - 1 }
+                    ];
+
+                    for (const n of neighbors) {
+                        const key = `${n.x},${n.y}`;
+                        if (!visited.has(key) && this.isValidMoveForUnit(unit, n.x, n.y)) {
+                            visited.add(key);
+                            queue.push({ x: n.x, y: n.y, moves: moves + 1 });
+                        }
+                    }
+                }
+            }
+
+            if (bestX !== unit.gridX || bestY !== unit.gridY) {
+                const dx = Math.sign(bestX - unit.gridX);
+                const dy = Math.sign(bestY - unit.gridY);
+
+                if (dx !== 0 && this.isValidMoveForUnit(unit, unit.gridX + dx, unit.gridY)) {
+                    scene.moveUnitAI(unit, unit.gridX + dx, unit.gridY);
+                } else if (dy !== 0 && this.isValidMoveForUnit(unit, unit.gridX, unit.gridY + dy)) {
+                    scene.moveUnitAI(unit, unit.gridX, unit.gridY + dy);
+                }
+            }
+            unit.hasMoved = true;
+        }
+
+        // Final attack check after moving
+        const finalDist = this.getDistanceToUnit(unit, nearest);
+        if (unit.canAttack() && finalDist <= unit.rangedRange && finalDist > 1) {
             scene.time.delayedCall(400, () => {
                 scene.performRangedAttack(unit, nearest);
+            });
+        } else if (unit.canAttack() && finalDist === 1) {
+            // Melee as last resort
+            scene.time.delayedCall(400, () => {
+                scene.performAttack(unit, nearest);
             });
         }
 

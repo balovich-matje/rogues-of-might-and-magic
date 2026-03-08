@@ -1408,6 +1408,15 @@ export class BattleScene extends Phaser.Scene {
         const modal = document.getElementById('spellbook-modal');
         if (!modal.classList.contains('hidden')) return;
 
+        // Check if silence is active
+        if (this.silenceActive) {
+            this.uiManager.showFloatingText(
+                '🔇 Spells are silenced!',
+                400, 300, '#9B59B6'
+            );
+            return;
+        }
+
         this.uiManager.updateManaDisplay();
 
         // Define categories with styles
