@@ -2,3 +2,16 @@ utils/
 test/*.html
 test/*.js
 node_modules/
+
+# Documentation (local only)
+*.md
+!README.md
+WORKFLOW*.md
+AGENTS.md
+PLAN.md
+VERIFICATION.md
+RESEARCH*.md
+
+# Dev tools
+utils/temp/
+test/*.md
