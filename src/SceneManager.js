@@ -524,103 +524,161 @@ export class BattleScene extends Phaser.Scene {
     generateObstacles() {
         if (!this.currentStage || !this.currentStage.hasObstacles) return;
 
-        const playerArea = this.currentStage.playerArea;
-
-        // Mountain Pass: Create a chokepoint in the middle
+        // Mountain Pass: Use random rock generation with constraints
         if (this.currentStage.obstacleType === 'mountain') {
             this.generateMountainObstacles();
             return;
         }
 
-        // Ruins of a Castle logic (default):
-        // Player area is on the left side (x: 0-3, y: 0-15)
-        // Add impassable walls around the player starting area
-        const wallSegments = 4;
-
-        for (let i = 0; i < wallSegments; i++) {
-            const isHorizontal = Math.random() > 0.5;
-            const length = Math.floor(Math.random() * 3) + 1;
-
-            let startX, startY;
-            const side = Math.floor(Math.random() * 3);
-
-            if (side === 0) {
-                startX = playerArea.x2 + Math.floor(Math.random() * 3);
-                startY = Math.floor(Math.random() * (playerArea.y2 - playerArea.y1) * 0.3);
-            } else if (side === 1) {
-                startX = playerArea.x2 + Math.floor(Math.random() * 3);
-                startY = playerArea.y1 + Math.floor(Math.random() * (playerArea.y2 - playerArea.y1));
-            } else {
-                startX = playerArea.x2 + Math.floor(Math.random() * 3);
-                startY = playerArea.y2 - Math.floor(Math.random() * (playerArea.y2 - playerArea.y1) * 0.3);
-            }
-
-            for (let j = 0; j < length; j++) {
-                const wallX = isHorizontal ? startX + j : startX;
-                const wallY = isHorizontal ? startY : startY + j;
-
-                const inPlayerArea = wallX >= playerArea.x1 && wallX < playerArea.x2 && 
-                                     wallY >= playerArea.y1 && wallY < playerArea.y2;
+        // Ruins of a Castle logic:
+        // Player spawn area is 5x5 at center (x: 5-9, y: 5-9 for 15x15 grid)
+        // Walls spawn ONE CELL LAYER around this area (border ring, not inside)
+        const size = this.currentStage.width;
+        const center = Math.floor(size / 2);  // 7 for 15x15
+        
+        // Player spawn area: 5x5 centered
+        const spawnStart = center - 2;  // 5
+        const spawnEnd = center + 2;    // 9
+        
+        // Wall layer is ONE CELL outside the spawn area
+        const wallStart = spawnStart - 1;  // 4
+        const wallEnd = spawnEnd + 1;      // 10
+        
+        // Create wall border around spawn area
+        for (let x = wallStart; x <= wallEnd; x++) {
+            for (let y = wallStart; y <= wallEnd; y++) {
+                // Skip if inside spawn area (walls only on border)
+                if (x >= spawnStart && x <= spawnEnd && y >= spawnStart && y <= spawnEnd) {
+                    continue;
+                }
                 
-                if (!inPlayerArea && 
-                    wallX >= 0 && wallX < this.gridSystem.width && 
-                    wallY >= 0 && wallY < this.gridSystem.height) {
-                    this.gridSystem.addObstacle(wallX, wallY);
+                // Only place walls on the border ring (one cell layer)
+                if (x === wallStart || x === wallEnd || y === wallStart || y === wallEnd) {
+                    // Ensure within bounds
+                    if (x >= 0 && x < size && y >= 0 && y < size) {
+                        this.gridSystem.addObstacle(x, y, 'wall');
+                    }
                 }
             }
         }
     }
 
     generateMountainObstacles() {
-        // Mountain Pass: Create two mountain ranges with a narrow chokepoint in the middle
-        // This creates tactical gameplay - players must defend the pass
+        // Mountain Pass: Generate rocks randomly without trapping units
+        // Ensure 2x2 bosses can spawn and move
         const width = this.gridSystem.width;
         const height = this.gridSystem.height;
         const playerArea = this.currentStage.playerArea;
         
-        // Mountain ranges on top and bottom, leaving a 3-tile wide passage in the middle
-        const passageY1 = 4;  // Passage starts at row 4
-        const passageY2 = 6;  // Passage ends at row 6 (3 tiles wide: 4, 5, 6)
+        const obstacles = [];
+        const rockSet = new Set();
         
-        // Left mountain range (from right of player area to middle)
-        for (let x = playerArea.x2; x < 6; x++) {
-            for (let y = 0; y < passageY1; y++) {
-                // Top mountain - leave some gaps
-                if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y, 'rock');
+        // Helper to check if a position has a rock
+        const hasRock = (x, y) => rockSet.has(`${x},${y}`);
+        
+        // Helper to check if placing a rock at (x,y) would create a 2x2 block
+        const creates2x2Block = (x, y) => {
+            // Check all four possible 2x2 squares that include (x,y)
+            const checks = [
+                [[x-1, y-1], [x, y-1], [x-1, y], [x, y]],  // top-left
+                [[x, y-1], [x+1, y-1], [x, y], [x+1, y]],  // top-right
+                [[x-1, y], [x, y], [x-1, y+1], [x, y+1]],  // bottom-left
+                [[x, y], [x+1, y], [x, y+1], [x+1, y+1]]   // bottom-right
+            ];
+            
+            for (const square of checks) {
+                let rockCount = 0;
+                let validCells = 0;
+                for (const [cx, cy] of square) {
+                    if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+                        validCells++;
+                        if (hasRock(cx, cy) || (cx === x && cy === y)) {
+                            rockCount++;
+                        }
+                    }
+                }
+                // If all 4 cells exist and would be blocked, that's a problem
+                if (validCells === 4 && rockCount === 4) {
+                    return true;
                 }
             }
-            for (let y = passageY2 + 1; y < height; y++) {
-                // Bottom mountain - leave some gaps
-                if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y, 'rock');
+            return false;
+        };
+        
+        // Helper to check if position is in player spawn area (keep clear)
+        const isSpawnArea = (x, y) => {
+            return x >= playerArea.x1 && x < playerArea.x2 && 
+                   y >= playerArea.y1 && y < playerArea.y2;
+        };
+        
+        // Generate rocks with constraints
+        const rockDensity = 0.15;  // 15% coverage
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                // Skip spawn area
+                if (isSpawnArea(x, y)) continue;
+                
+                // Random placement with density
+                if (Math.random() < rockDensity) {
+                    // Check if this would create a 2x2 block (traps 1x1 units)
+                    if (!creates2x2Block(x, y)) {
+                        rockSet.add(`${x},${y}`);
+                        obstacles.push({ x, y });
+                    }
                 }
             }
         }
         
-        // Right mountain range (from middle to right edge)
-        for (let x = 7; x < width; x++) {
-            for (let y = 0; y < passageY1; y++) {
-                if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y, 'rock');
-                }
+        // Simple path check: ensure spawn area is connected to enemy spawn areas
+        const reachable = this.countReachable(width, height, obstacles, 
+            Math.floor((playerArea.x1 + playerArea.x2) / 2),
+            Math.floor((playerArea.y1 + playerArea.y2) / 2)
+        );
+        const totalCells = width * height - ((playerArea.x2 - playerArea.x1) * (playerArea.y2 - playerArea.y1));
+        
+        // If less than 50% of map is reachable, reduce rocks
+        if (reachable < totalCells * 0.5) {
+            console.warn('[SceneManager] Map connectivity low, reducing rocks');
+            while (obstacles.length > totalCells * 0.1 && reachable < totalCells * 0.7) {
+                const idx = Math.floor(Math.random() * obstacles.length);
+                const removed = obstacles.splice(idx, 1)[0];
+                rockSet.delete(`${removed.x},${removed.y}`);
             }
-            for (let y = passageY2 + 1; y < height; y++) {
-                if (Math.random() > 0.3) {
-                    this.gridSystem.addObstacle(x, y, 'rock');
+        }
+        
+        // Add all rocks to the grid
+        for (const obs of obstacles) {
+            this.gridSystem.addObstacle(obs.x, obs.y, 'rock');
+        }
+    }
+    
+    // Count reachable cells from a starting position
+    countReachable(width, height, obstacles, startX, startY) {
+        const obstacleSet = new Set(obstacles.map(o => `${o.x},${o.y}`));
+        const visited = new Set();
+        const queue = [[startX, startY]];
+        visited.add(`${startX},${startY}`);
+        
+        const directions = [[0,1], [0,-1], [1,0], [-1,0]];
+        
+        while (queue.length > 0) {
+            const [cx, cy] = queue.shift();
+            
+            for (const [dx, dy] of directions) {
+                const nx = cx + dx;
+                const ny = cy + dy;
+                
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    const key = `${nx},${ny}`;
+                    if (!visited.has(key) && !obstacleSet.has(key)) {
+                        visited.add(key);
+                        queue.push([nx, ny]);
+                    }
                 }
             }
         }
         
-        // Add some rocks in the passage area (but keep path clear)
-        // Add a few obstacles at the edges of the passage for cover
-        const chokePointX = 6;  // Middle column
-        if (Math.random() > 0.5) {
-            this.gridSystem.addObstacle(chokePointX, passageY1, 'rock');  // Top of passage
-        }
-        if (Math.random() > 0.5) {
-            this.gridSystem.addObstacle(chokePointX, passageY2, 'rock');  // Bottom of passage
-        }
+        return visited.size;
     }
 
     getEnemySpawnPositions() {
