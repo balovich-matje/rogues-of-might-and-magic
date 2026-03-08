@@ -718,6 +718,16 @@ export class TurnSystem {
             return;
         }
 
+        if (unit.type === 'THE_SILENCE') {
+            this.executeSilenceTurn(playerUnits);
+            return;
+        }
+
+        if (unit.type === 'VOID_HERALD') {
+            this.executeVoidHeraldTurn(playerUnits);
+            return;
+        }
+
         // Default AI for all other units
         this.executeDefaultAITurn(playerUnits);
     }
@@ -896,6 +906,148 @@ export class TurnSystem {
 
         // 2. If no pull was made, execute default AI
         this.executeDefaultAITurn(playerUnits);
+    }
+
+    // The Silence AI: Pure melee fighter, applies silence aura at fight start
+    executeSilenceTurn(playerUnits) {
+        const unit = this.currentUnit;
+        const scene = this.scene;
+
+        // Apply silence on first turn (only once per battle)
+        if (!unit.silenceApplied) {
+            unit.silenceApplied = true;
+            scene.silenceActive = true;
+            scene.uiManager.showFloatingText('🔇 AURA OF SILENCE! Spells disabled!', 400, 200, '#9B59B6');
+            scene.addCombatLog('The Silence emanates an aura that blocks all spellcasting!', 'spell');
+        }
+
+        // Find nearest player
+        let nearest = null;
+        let minDist = Infinity;
+        for (const player of playerUnits) {
+            const dist = this.getDistanceToUnit(unit, player);
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = player;
+            }
+        }
+
+        // If adjacent, melee attack
+        if (minDist === 1 && unit.canAttack()) {
+            scene.performAttack(unit, nearest);
+            scene.time.delayedCall(800, () => this.nextTurn());
+            return;
+        }
+
+        // Move towards nearest player
+        if (unit.canMove()) {
+            const path = this.findPath(unit, nearest.gridX, nearest.gridY);
+            if (path && path.length > 1) {
+                // Move one step along path
+                const nextStep = path[1];
+                scene.moveUnitAI(unit, nextStep.x, nextStep.y);
+
+                // Check if now adjacent and can attack
+                const newDist = this.getDistanceToUnit(unit, nearest);
+                if (newDist === 1 && unit.canAttack()) {
+                    scene.time.delayedCall(400, () => {
+                        scene.performAttack(unit, nearest);
+                    });
+                }
+            }
+            unit.hasMoved = true;
+        }
+
+        scene.time.delayedCall(1200, () => this.nextTurn());
+    }
+
+    // Void Herald AI: Mass slow at start, casts voidball each turn
+    executeVoidHeraldTurn(playerUnits) {
+        const unit = this.currentUnit;
+        const scene = this.scene;
+
+        // Apply mass slow on first turn
+        if (!unit.voidSlowApplied) {
+            unit.voidSlowApplied = true;
+            scene.uiManager.showFloatingText('🌑 VOID SLOW! Movement reduced!', 400, 200, '#6B5B8B');
+
+            for (const player of playerUnits) {
+                // Reduce movement by 3, minimum 1
+                const slowAmount = 3;
+                player.moveRange = Math.max(1, player.moveRange - slowAmount);
+                player.voidSlowRounds = 999; // Permanent for this battle
+                scene.uiManager.showBuffText(player, 'SLOWED!', '#6B5B8B');
+            }
+            scene.addCombatLog('Void Herald slows all enemies with void energy!', 'debuff');
+        }
+
+        // Find nearest player for targeting
+        let nearest = null;
+        let minDist = Infinity;
+        for (const player of playerUnits) {
+            const dist = this.getDistanceToUnit(unit, player);
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = player;
+            }
+        }
+
+        // Cast voidball (38 damage fireball-like) if in range
+        const voidballRange = 6;
+        if (minDist <= voidballRange && unit.canAttack()) {
+            unit.hasAttacked = true;
+            scene.uiManager.showBuffText(unit, 'VOIDBALL!', '#6B5B8B');
+
+            // Visual effect - purple fireball
+            const projectile = scene.add.text(
+                unit.sprite.x, unit.sprite.y - 20,
+                '🌑',
+                { fontSize: '32px' }
+            ).setOrigin(0.5);
+
+            const angle = Phaser.Math.Angle.Between(
+                unit.sprite.x, unit.sprite.y,
+                nearest.sprite.x, nearest.sprite.y
+            );
+            projectile.setRotation(angle);
+
+            scene.tweens.add({
+                targets: projectile,
+                x: nearest.sprite.x,
+                y: nearest.sprite.y,
+                duration: 300,
+                ease: 'Power2',
+                onComplete: () => {
+                    projectile.destroy();
+
+                    // Deal 38 damage in 3x3 AoE
+                    const voidDamage = 38;
+                    for (const player of playerUnits) {
+                        const aoeDist = Math.abs(player.gridX - nearest.gridX) + Math.abs(player.gridY - nearest.gridY);
+                        if (aoeDist <= 1) {
+                            player.takeDamage(voidDamage, true, unit);
+                            scene.uiManager.showDamageText(player, voidDamage);
+                        }
+                    }
+                    scene.addCombatLog(`Void Herald casts Voidball for ${voidDamage} damage!`, 'spell');
+                }
+            });
+
+            scene.time.delayedCall(1000, () => this.nextTurn());
+            return;
+        }
+
+        // Move to get in range
+        if (unit.canMove()) {
+            const path = this.findPath(unit, nearest.gridX, nearest.gridY);
+            if (path && path.length > 1) {
+                const nextStep = path[1];
+                scene.moveUnitAI(unit, nextStep.x, nextStep.y);
+            }
+            unit.hasMoved = true;
+        }
+
+        scene.time.delayedCall(1200, () => this.nextTurn());
     }
 
     // Calculate distance from a unit to another unit (accounting for 2x2 bosses)

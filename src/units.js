@@ -298,6 +298,31 @@ const UNIT_TYPES = {
             { name: 'Tendril Pull', description: 'Pulls distant enemies into melee range.' }
         ]
     },
+    THE_SILENCE: {
+        name: "The Silence",
+        emoji: '🤐',
+        image: 'images/enemy/cultist/the_silence.png',
+        health: 400, maxHealth: 400,
+        damage: 55, moveRange: 3, initiative: 8,
+        isPlayer: false, cost: 2200,
+        isBoss: true, bossSize: 2,
+        passives: [
+            { name: 'Aura of Silence', description: 'All spellcasting is disabled during the fight. Melee only!' }
+        ]
+    },
+    VOID_HERALD: {
+        name: "Void Herald",
+        emoji: '🌑',
+        image: 'images/enemy/cultist/void_herald.png',
+        health: 320, maxHealth: 320,
+        damage: 35, moveRange: 4, rangedRange: 6, initiative: 12,
+        isPlayer: false, cost: 2400,
+        isBoss: true, bossSize: 2,
+        passives: [
+            { name: 'Void Slow', description: 'Reduces all enemy movement by 3 at fight start (min 1).' },
+            { name: 'Voidball', description: 'Casts 38 damage voidball each turn.' }
+        ]
+    },
     // ============================================
     // NEW FACTION: DUNGEON DWELLERS
     // ============================================

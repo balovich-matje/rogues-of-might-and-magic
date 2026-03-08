@@ -14,6 +14,15 @@ export class SpellSystem {
         const spell = SPELLS[spellId];
         if (!spell) return;
 
+        // Check if silence is active
+        if (this.scene.silenceActive) {
+            this.scene.uiManager.showFloatingText(
+                '🔇 Spells are silenced!',
+                400, 300, '#9B59B6'
+            );
+            return;
+        }
+
         // Check spells per round limit
         if (this.scene.spellsCastThisRound >= this.scene.spellsPerRound) {
             this.scene.uiManager.showFloatingText(

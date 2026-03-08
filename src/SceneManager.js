@@ -44,6 +44,7 @@ export class BattleScene extends Phaser.Scene {
         this.combatLogOpen = false;
         this.currentStage = null;
         this.tileSize = this.tileSize;
+        this.silenceActive = false; // The Silence boss ability
     }
 
     preload() {
@@ -63,7 +64,8 @@ export class BattleScene extends Phaser.Scene {
             // Dungeon Dwellers
             'ANIMATED_ARMOR', 'SKELETON_ARCHER', 'SKELETON_SOLDIER', 'LOST_SPIRIT', 'SUMMONER_LICH',
             // Old God Worshippers
-            'CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER', "OCTOTH_HROARATH"
+            'CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER', "OCTOTH_HROARATH",
+            'THE_SILENCE', 'VOID_HERALD'
         ];
         for (const unitType of enemyUnits) {
             const template = UNIT_TYPES[unitType];
@@ -318,6 +320,16 @@ export class BattleScene extends Phaser.Scene {
 
     useUnitAbility() {
         if (!this.turnSystem || !this.turnSystem.currentUnit) return;
+
+        // Check if silence is active
+        if (this.silenceActive) {
+            this.uiManager.showFloatingText(
+                '🔇 Abilities are silenced!',
+                400, 300, '#9B59B6'
+            );
+            return;
+        }
+
         const unit = this.turnSystem.currentUnit;
 
         if (unit.type === 'CLERIC' && !unit.hasHealed) {
@@ -464,7 +476,9 @@ export class BattleScene extends Phaser.Scene {
         if (this.currentEnemyFaction === 'DUNGEON_DWELLERS') {
             selectedBoss = 'SUMMONER_LICH';
         } else if (this.currentEnemyFaction === 'OLD_GOD_WORSHIPPERS') {
-            selectedBoss = 'OCTOTH_HROARATH';
+            // Randomly select between 3 cultist bosses
+            const cultistBosses = ['OCTOTH_HROARATH', 'THE_SILENCE', 'VOID_HERALD'];
+            selectedBoss = cultistBosses[Math.floor(Math.random() * cultistBosses.length)];
         } else {
             // Default to Greenskin Horde bosses
             const bossTypes = ['OGRE_CHIEFTAIN', 'ORC_SHAMAN_KING', 'LOOT_GOBLIN'];
@@ -1583,6 +1597,11 @@ export class BattleScene extends Phaser.Scene {
 
         if (enemyUnits.length === 0) {
             this.victoryShown = true;
+            // Clear silence if it was active
+            if (this.silenceActive) {
+                this.silenceActive = false;
+                this.uiManager.showFloatingText('🔇 Silence lifted!', 400, 250, '#6B8B5B');
+            }
             this.showVictoryScreen(true);
         } else if (playerUnits.length === 0) {
             this.victoryShown = true;
