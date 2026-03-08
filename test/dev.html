@@ -573,7 +573,7 @@
             }
         };
 
-        // Generate castle walls - ONE CELL LAYER border around 5x5 center spawn
+        // Generate castle walls - ONE CELL LAYER border around 5x5 center spawn WITH GAPS
         function generateCastleWalls(config) {
             const size = config.gridSize;
             const center = Math.floor(size / 2);
@@ -587,7 +587,17 @@
             const wallStart = spawnStart - 1;
             const wallEnd = spawnEnd + 1;
             
-            // Create wall border around spawn area
+            // Create gaps in the wall border (1-2 cells) to allow passage
+            // Gaps at top, bottom, left, right of the border
+            const gapPositions = [
+                { x: center, y: wallStart },      // Top gap
+                { x: center, y: wallEnd },        // Bottom gap
+                { x: wallStart, y: center },      // Left gap
+                { x: wallEnd, y: center }         // Right gap
+            ];
+            const gapSet = new Set(gapPositions.map(g => `${g.x},${g.y}`));
+            
+            // Create wall border around spawn area (with gaps)
             for (let x = wallStart; x <= wallEnd; x++) {
                 for (let y = wallStart; y <= wallEnd; y++) {
                     // Skip if inside spawn area (walls only on border)
@@ -597,6 +607,10 @@
                     
                     // Only place walls on the border ring (one cell layer)
                     if (x === wallStart || x === wallEnd || y === wallStart || y === wallEnd) {
+                        // Skip if this position is a gap
+                        if (gapSet.has(`${x},${y}`)) {
+                            continue;
+                        }
                         obstacles.push({ x, y, type: 'wall' });
                     }
                 }

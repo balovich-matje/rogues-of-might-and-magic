@@ -78,6 +78,10 @@ export class BattleScene extends Phaser.Scene {
         this.load.image('rock_img', 'images/obstacles/rock.png');
         this.load.image('wall_large_img', 'images/obstacles/wall_large.png');
         this.load.image('rock_large_img', 'images/obstacles/rock_large.png');
+        // Mountain Pass rock variations
+        this.load.image('rock_tall_img', 'images/obstacles/rock_tall.png');
+        this.load.image('rock_wide_img', 'images/obstacles/rock_wide.png');
+        this.load.image('rock_jagged_img', 'images/obstacles/rock_jagged.png');
         
         // Load tile background images
         this.load.image('grass_tile', 'images/tiles/grass.png');
@@ -532,7 +536,8 @@ export class BattleScene extends Phaser.Scene {
 
         // Ruins of a Castle logic:
         // Player spawn area is 5x5 at center (x: 5-9, y: 5-9 for 15x15 grid)
-        // Walls spawn ONE CELL LAYER around this area (border ring, not inside)
+        // Walls spawn ONE CELL LAYER around this area (border ring)
+        // WITH GAPS (1-2 cells) to allow players/enemies to pass through
         const size = this.currentStage.width;
         const center = Math.floor(size / 2);  // 7 for 15x15
         
@@ -544,7 +549,16 @@ export class BattleScene extends Phaser.Scene {
         const wallStart = spawnStart - 1;  // 4
         const wallEnd = spawnEnd + 1;      // 10
         
-        // Create wall border around spawn area
+        // Create gaps in the wall border (at center of each side)
+        const gapPositions = [
+            { x: center, y: wallStart },      // Top gap
+            { x: center, y: wallEnd },        // Bottom gap
+            { x: wallStart, y: center },      // Left gap
+            { x: wallEnd, y: center }         // Right gap
+        ];
+        const gapSet = new Set(gapPositions.map(g => `${g.x},${g.y}`));
+        
+        // Create wall border around spawn area (with gaps)
         for (let x = wallStart; x <= wallEnd; x++) {
             for (let y = wallStart; y <= wallEnd; y++) {
                 // Skip if inside spawn area (walls only on border)
@@ -554,6 +568,10 @@ export class BattleScene extends Phaser.Scene {
                 
                 // Only place walls on the border ring (one cell layer)
                 if (x === wallStart || x === wallEnd || y === wallStart || y === wallEnd) {
+                    // Skip if this position is a gap
+                    if (gapSet.has(`${x},${y}`)) {
+                        continue;
+                    }
                     // Ensure within bounds
                     if (x >= 0 && x < size && y >= 0 && y < size) {
                         this.gridSystem.addObstacle(x, y, 'wall');
