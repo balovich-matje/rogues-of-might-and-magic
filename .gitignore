@@ -1,3 +1,7 @@
 # Documentation (local development only - not in remote)
 *.md
 !README.md
+
+# Utils folder - image generation outputs and temp files
+utils/*
+
