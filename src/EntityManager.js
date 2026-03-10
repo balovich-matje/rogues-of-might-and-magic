@@ -73,6 +73,10 @@ export class Unit {
         // Berserker Bloodlust stacks (permanent damage increase from kills)
         this.bloodlustStacks = 0;
 
+        // Cultist Unstable Form tracking (Gibbering Horror)
+        this.unstableFormRounds = 0;
+        this.unstableFormType = null; // 'movement' or 'damage'
+
         // Summoner Lich first turn summon
         if (this.type === 'SUMMONER_LICH') {
             this.firstSummon = true;
@@ -181,6 +185,13 @@ export class Unit {
         // Lost Spirit: +50% spell damage
         if (this.type === 'LOST_SPIRIT') {
             amount = Math.floor(amount * 1.5);
+        }
+
+        // Cultist Void-Burned Skin: 25% magic damage resistance
+        const cultistTypes = ['CULTIST_ACOLYTE', 'CULTIST_NEOPHYTE', 'GIBBERING_HORROR', 'FLESH_WARPED_STALKER',
+                              'OCTOTH_HROARATH', 'THE_SILENCE', 'VOID_HERALD'];
+        if (cultistTypes.includes(this.type)) {
+            amount = Math.floor(amount * 0.75);
         }
 
         // Shield applies to spell damage as well
@@ -401,6 +412,27 @@ export class Unit {
             }
         }
 
+        // Gibbering Horror: Unstable Form - randomly gain +2 MOV or +10 damage at turn start
+        if (this.type === 'GIBBERING_HORROR' && !this.isDead) {
+            const roll = Math.random();
+            if (roll < 0.5) {
+                // +2 Movement
+                this.unstableFormType = 'movement';
+                this.unstableFormBonus = 2;
+                this.moveRange += 2;
+                this.scene.uiManager.showBuffText(this, 'MUTATION: SPEED!', '#9B59B6');
+                this.scene.addCombatLog(`${this.name}'s unstable form grants +2 Movement!`, 'buff');
+            } else {
+                // +10 Damage
+                this.unstableFormType = 'damage';
+                this.unstableFormBonus = 10;
+                this.damage += 10;
+                this.scene.uiManager.showBuffText(this, 'MUTATION: POWER!', '#9B59B6');
+                this.scene.addCombatLog(`${this.name}'s unstable form grants +10 Damage!`, 'buff');
+            }
+            this.unstableFormRounds = 1;
+        }
+
         // Decrement buff durations (skip if permanent with rounds = -1)
         if (this.hasteRounds > 0) {
             this.hasteRounds--;
@@ -427,6 +459,21 @@ export class Unit {
             this.iceSlowRounds--;
             if (this.iceSlowRounds === 0) {
                 this.moveRange = UNIT_TYPES[this.type].moveRange;
+            }
+        }
+
+        // Unstable Form expiration
+        if (this.unstableFormRounds > 0) {
+            this.unstableFormRounds--;
+            if (this.unstableFormRounds === 0) {
+                // Revert the buff by subtracting the bonus (preserves scaling and other modifiers)
+                if (this.unstableFormType === 'movement' && this.unstableFormBonus) {
+                    this.moveRange -= this.unstableFormBonus;
+                } else if (this.unstableFormType === 'damage' && this.unstableFormBonus) {
+                    this.damage -= this.unstableFormBonus;
+                }
+                this.unstableFormType = null;
+                this.unstableFormBonus = 0;
             }
         }
 

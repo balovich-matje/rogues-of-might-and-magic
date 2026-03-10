@@ -376,34 +376,48 @@ const UNIT_TYPES = {
         emoji: '👤',
         image: 'images/enemy/cultist/acolyte.png',
         health: 40, maxHealth: 40,
-        damage: 20, moveRange: 4, initiative: 10,
-        isPlayer: false, cost: 150
+        damage: 20, moveRange: 5, initiative: 14,
+        isPlayer: false, cost: 150,
+        passives: [
+            { name: 'Void-Burned Skin', description: '25% damage resistance to all magic damage.' }
+        ]
     },
     CULTIST_NEOPHYTE: {
         name: 'Cultist Neophyte',
         emoji: '🤫',
         image: 'images/enemy/cultist/neophyte.png',
         health: 35, maxHealth: 35,
-        damage: 15, moveRange: 3, initiative: 9,
+        damage: 15, moveRange: 4, initiative: 13,
         isPlayer: false, cost: 200,
-        rangedRange: 4
+        rangedRange: 4,
+        passives: [
+            { name: 'Void-Burned Skin', description: '25% damage resistance to all magic damage.' }
+        ]
     },
     GIBBERING_HORROR: {
         name: 'Gibbering Horror',
         emoji: '🐙',
         image: 'images/enemy/cultist/gibbering_horror.png',
         health: 80, maxHealth: 80,
-        damage: 40, moveRange: 3, initiative: 11,
+        damage: 40, moveRange: 5, initiative: 15,
         isPlayer: false, cost: 500,
-        rangedRange: 5
+        rangedRange: 5,
+        passives: [
+            { name: 'Void-Burned Skin', description: '25% damage resistance to all magic damage.' },
+            { name: 'Unstable Form', description: 'At start of turn, randomly gain +2 MOV or +10 damage for this turn.' }
+        ]
     },
     FLESH_WARPED_STALKER: {
         name: 'Flesh-warped Stalker',
         emoji: '🦎',
         image: 'images/enemy/cultist/flesh_warped_stalker.png',
         health: 70, maxHealth: 70,
-        damage: 40, moveRange: 7, initiative: 16,
-        isPlayer: false, cost: 550
+        damage: 40, moveRange: 7, initiative: 17,
+        isPlayer: false, cost: 550,
+        passives: [
+            { name: 'Void-Burned Skin', description: '25% damage resistance to all magic damage.' },
+            { name: 'Feast of Flesh', description: 'Landing a killing blow completely refreshes this unit\'s turn.' }
+        ]
     }
 };
 

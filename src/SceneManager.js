@@ -1191,6 +1191,26 @@ export class BattleScene extends Phaser.Scene {
                         yoyo: true,
                         repeat: 2
                     });
+
+                    // Flesh-warped Stalker: Feast of Flesh - refresh turn on kill
+                    if (attacker.type === 'FLESH_WARPED_STALKER' && defender.isDead && !attacker.isDead) {
+                        attacker.hasMoved = false;
+                        attacker.hasAttacked = false;
+                        this.uiManager.showBuffText(attacker, 'FEAST!', '#8B0000');
+                        this.addCombatLog(`${attacker.name} feasts on ${defender.name}'s flesh and gains another turn!`, 'buff');
+                        
+                        // Re-insert the Stalker at the front of the turn queue for an immediate extra turn
+                        // Only do this for AI units (player units are handled by the input system)
+                        if (!attacker.isPlayer && this.turnSystem.currentUnit === attacker) {
+                            // Insert at the front of the queue
+                            this.turnSystem.turnQueue.unshift({ unit: attacker, isTemporalShift: false });
+                        }
+                        
+                        // Update UI to show the unit can act again
+                        if (this.turnSystem.currentUnit === attacker) {
+                            this.gridSystem.highlightValidMoves(attacker);
+                        }
+                    }
                 }
 
                 // Paladin Mythic: Divine Retribution (Melee Retaliation)
